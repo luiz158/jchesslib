@@ -78,33 +78,66 @@ public class Board {
 
     // create empty board
     public Board() {
+        this(false);
+    }
 
-        this.board = new int[120];
-        this.oldBoard = new int[120];
-        this.pieceList = new int[2][7][10];
+    public Board(boolean startingPosition) {
 
-        this.turn = CONSTANTS.WHITE;
-        for(int i=0;i<120;i++) {
-            this.board[i] = CONSTANTS.EMPTY_POS[i];
-            this.oldBoard[i] = 0xFF;
+        if(startingPosition) {
+            this.board = new int[120];
+            this.oldBoard = new int[120];
+            this.pieceList = new int[2][7][10];
+
+            this.turn = CONSTANTS.WHITE;
+            for (int i = 0; i < 120; i++) {
+                this.board[i] = CONSTANTS.INIT_POS[i];
+                this.oldBoard[i] = 0xFF;
+            }
+            this.initPieceList();
+            this.castleWkingOk = true;
+            this.castleWqueenOk = true;
+            this.castleBkingOk = true;
+            this.castleBqueenOk = true;
+            this.prevCastleWkingOk = false;
+            this.prevCastleWqueenOk = false;
+            this.prevCastleBkingOk = false;
+            this.prevCastleBqueenOk = false;
+            this.enPassentTarget = 0;
+            this.halfmoveClock = 0;
+            this.fullmoveNumber = 1;
+            this.undoAvailable = false;
+            this.lastMoveWasNull = false;
+            this.prevHalfmoveClock = 0;
+            this.zobristInitialized = false;
+            this.posHashInitialized = false;
+        } else {  // initialize empty board
+            this.board = new int[120];
+            this.oldBoard = new int[120];
+            this.pieceList = new int[2][7][10];
+
+            this.turn = CONSTANTS.WHITE;
+            for(int i=0;i<120;i++) {
+                this.board[i] = CONSTANTS.EMPTY_POS[i];
+                this.oldBoard[i] = 0xFF;
+            }
+            this.initPieceList();
+            this.castleWkingOk = false;
+            this.castleWqueenOk = false;
+            this.castleBkingOk = false;
+            this.castleBqueenOk = false;
+            this.prevCastleWkingOk = false;
+            this.prevCastleWqueenOk = false;
+            this.prevCastleBkingOk = false;
+            this.prevCastleBqueenOk = false;
+            this.enPassentTarget = 0;
+            this.halfmoveClock = 0;
+            this.fullmoveNumber = 1;
+            this.undoAvailable = false;
+            this.lastMoveWasNull = false;
+            this.prevHalfmoveClock = 0;
+            this.zobristInitialized = false;
+            this.posHashInitialized = false;
         }
-        this.initPieceList();
-        this.castleWkingOk = false;
-        this.castleWqueenOk = false;
-        this.castleBkingOk = false;
-        this.castleBqueenOk = false;
-        this.prevCastleWkingOk = false;
-        this.prevCastleWqueenOk = false;
-        this.prevCastleBkingOk = false;
-        this.prevCastleBqueenOk = false;
-        this.enPassentTarget = 0;
-        this.halfmoveClock = 0;
-        this.fullmoveNumber = 1;
-        this.undoAvailable = false;
-        this.lastMoveWasNull = false;
-        this.prevHalfmoveClock = 0;
-        this.zobristInitialized = false;
-        this.posHashInitialized = false;
     }
 
     public Board(String fen) {
@@ -293,36 +326,7 @@ public class Board {
 
     }
 
-    public Board(boolean startingPosition) {
-        this.board = new int[120];
-        this.oldBoard = new int[120];
-        this.pieceList = new int[2][7][10];
-
-        this.turn = CONSTANTS.WHITE;
-        for(int i=0;i<120;i++) {
-            this.board[i] = CONSTANTS.INIT_POS[i];
-            this.oldBoard[i] = 0xFF;
-        }
-        this.initPieceList();
-        this.castleWkingOk = true;
-        this.castleWqueenOk = true;
-        this.castleBkingOk = true;
-        this.castleBqueenOk = true;
-        this.prevCastleWkingOk = false;
-        this.prevCastleWqueenOk = false;
-        this.prevCastleBkingOk = false;
-        this.prevCastleBqueenOk = false;
-        this.enPassentTarget = 0;
-        this.halfmoveClock = 0;
-        this.fullmoveNumber = 1;
-        this.undoAvailable = false;
-        this.lastMoveWasNull = false;
-        this.prevHalfmoveClock = 0;
-        this.zobristInitialized = false;
-        this.posHashInitialized = false;
-    }
-
-    // init to starting position
+    // reset to starting position
     public void resetToStartingPosition() {
 
         this.board = new int[120];
@@ -1403,6 +1407,7 @@ public class Board {
         // application of a move) makes it impossible
         // to undo (undo can only be done once, not twice in a row)
         Board b_temp = this.makeCopy();
+        b_temp.apply(m);
         boolean is_check = b_temp.isCheck();
         boolean is_checkmate = b_temp.isCheckmate();
 

@@ -791,16 +791,24 @@ public class PgnReader {
     private void parseNAG() {
 
         int lineSize = currentLine.length();
+        //System.out.println("parse NAG: " + currentLine.substring(currentIdx, currentIdx+2));
 
         if(currentLine.charAt(currentIdx) == '$') {
             int idx_end = currentIdx;
-            while(idx_end < lineSize && currentLine.charAt(idx_end) != ' ') {
-                idx_end ++;
+            //while(idx_end < lineSize && currentLine.charAt(idx_end) != ' ') {
+            while(idx_end < lineSize && (currentLine.charAt(idx_end) == '$'
+                    || (currentLine.charAt(idx_end) >= '0' && currentLine.charAt(idx_end) <= '9'))) {
+                idx_end++;
             }
+            //System.out.println(currentIdx);
+            //System.out.println(currentLine.length());
+            //System.out.println(idx_end);
+            //System.out.println(currentLine.substring(currentIdx, idx_end));
             if(idx_end+1 > currentIdx) {
                 boolean ok;
                 try {
                     int nr = Integer.parseInt(currentLine.substring(currentIdx + 1, idx_end));
+                    //System.out.println(nr);
                     currentNode.addNag(nr);
                     currentIdx = idx_end;
                 } catch(NumberFormatException e) {
@@ -811,22 +819,26 @@ public class PgnReader {
             }
             return;
         }
-        if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("??")) {
+        //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,currentIdx+2).equals("??")) {
+        if(currentLine.startsWith("??", currentIdx)) {
             currentNode.addNag(CONSTANTS.NAG_BLUNDER);
             currentIdx += 3;
             return;
         }
-        if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("!!")) {
+        //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("!!")) {
+        if(currentLine.startsWith("!!", currentIdx)) {
             currentNode.addNag(CONSTANTS.NAG_BRILLIANT_MOVE);
             currentIdx += 3;
             return;
         }
-        if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("!?")) {
+        //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("!?")) {
+        if(currentLine.startsWith("!?", currentIdx)) {
             currentNode.addNag(CONSTANTS.NAG_SPECULATIVE_MOVE);
             currentIdx += 3;
             return;
         }
-        if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("?!")) {
+        //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("?!")) {
+        if(currentLine.startsWith("?!", currentIdx)) {
             currentNode.addNag(CONSTANTS.NAG_DUBIOUS_MOVE);
             currentIdx += 3;
             return;
@@ -914,6 +926,7 @@ public class PgnReader {
                 return CONSTANTS.TKN_CLOSE_VARIATION;
             }
             if(ci == '$' || ci == '!' || ci == '?') {
+                //System.out.println("found NAG");
                 return CONSTANTS.TKN_NAG;
             }
             if(ci == '{') {
@@ -964,7 +977,7 @@ public class PgnReader {
                         int secondQuote = currentLine.indexOf('"', firstQuote + 1);
                         String tag = currentLine.substring(1, spaceOffset);
                         String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        //System.out.println(tag);
+                        // System.out.println(tag+value);
                         if (tag.equals("FEN")) {
                             startingFen = value;
                         } else {

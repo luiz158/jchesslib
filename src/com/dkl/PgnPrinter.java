@@ -65,11 +65,13 @@ public class PgnPrinter {
         pgn.append(tag+"\n");
         ArrayList<String> allTags = g.getTags();
         for(String tag_i : allTags) {
+            //System.out.println("tag out: " +tag_i);
             if(!tag_i.equals("Event") && !tag_i.equals("Site") && !tag_i.equals("Date") && !tag_i.equals("Round")
-                    && tag_i.equals("White") && !tag_i.equals("Black") && !tag_i.equals("Result" ))
+                    && !tag_i.equals("White") && !tag_i.equals("Black") && !tag_i.equals("Result" ))
             {
                 String value_i = g.getHeader(tag_i);
                 String tag_val = "[" + tag_i + " \"" + value_i + "\"]";
+                //System.out.println("tag out val: " +tag_val);
                 pgn.append(tag_val+"\n");
             }
         }

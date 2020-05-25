@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 
 /**
  * <p> Wrapper of {@link java.io.RandomAccessFile
@@ -54,7 +55,8 @@ public class OptimizedRandomAccessFile {
     private static int defaultExpectedLineLength = 80;
     private RandomAccessFile raf;
     private Long actualFilePointer;
-    private char[] charBuffer;
+    //private char[] charBuffer;
+    private byte[] charBuffer;
     private int nChars, nextChar;
     private int bufferSize;
     private long lastOffset;
@@ -85,7 +87,7 @@ public class OptimizedRandomAccessFile {
         this.raf = new RandomAccessFile(file, mode);
         actualFilePointer = null;
         this.bufferSize = BUFFER_SIZE;
-        charBuffer = new char[bufferSize];
+        charBuffer = new byte[bufferSize];
     }
 
     /**
@@ -123,7 +125,7 @@ public class OptimizedRandomAccessFile {
             }
             if (skipLF) {
                 skipLF = false;
-                if (charBuffer[nextChar] == '\n') {
+                if ((char) charBuffer[nextChar] == '\n') {
                     nextChar++;
                     continue;
                 }
@@ -155,7 +157,7 @@ public class OptimizedRandomAccessFile {
         }
         if (skipLF) {
             skipLF = false;
-            if (charBuffer[nextChar] == '\n') {
+            if ((char) charBuffer[nextChar] == '\n') {
                 nextChar++;
                 if (nextChar >= nChars) {
                     fill();
@@ -312,7 +314,7 @@ public class OptimizedRandomAccessFile {
             }
             if (skipLF) {
                 skipLF = false;
-                if (charBuffer[nextChar] == '\n') {
+                if ((char) charBuffer[nextChar] == '\n') {
                     nextChar++;
                 }
             }
@@ -748,11 +750,11 @@ public class OptimizedRandomAccessFile {
                 }
             }
             boolean eol = false;
-            char c = 0;
+            byte c = 0;
             int i;
 
             /* Skip a leftover '\n', if necessary */
-            if (omitLF && (charBuffer[nextChar] == '\n')) {
+            if (omitLF && ((char) charBuffer[nextChar] == '\n')) {
                 nextChar++;
             }
             skipLF = false;
@@ -761,7 +763,7 @@ public class OptimizedRandomAccessFile {
             charLoop:
             for (i = nextChar; i < nChars; i++) {
                 c = charBuffer[i];
-                if ((c == '\n') || (c == '\r')) {
+                if (((char) c == '\n') || ((char) c == '\r')) {
                     eol = true;
                     break charLoop;
                 }
@@ -773,18 +775,18 @@ public class OptimizedRandomAccessFile {
             if (eol) {
                 String str;
                 if (s == null) {
-                    str = new String(charBuffer, startChar, i - startChar);
+                    str = new String(charBuffer, startChar, i - startChar, StandardCharsets.ISO_8859_1);
                 } else {
-                    s.append(charBuffer, startChar, i - startChar);
+                    s.append(new String(charBuffer, startChar, i - startChar, StandardCharsets.ISO_8859_1));
                     str = s.toString();
                 }
                 nextChar++;
-                if (c == '\r') {
+                if ((char) c == '\r') {
                     skipLF = true;
                     if (nextChar >= nChars) {
                         fill();
                     }
-                    if (charBuffer[nextChar] == '\n') {
+                    if ((char) charBuffer[nextChar] == '\n') {
                         separatorIndex = 1;
                     }
                 }
@@ -795,7 +797,13 @@ public class OptimizedRandomAccessFile {
             if (s == null) {
                 s = new StringBuilder(defaultExpectedLineLength);
             }
-            s.append(charBuffer, startChar, i - startChar);
+            //System.out.println("MOOO");
+            //for(int m=0;m<charBuffer.length;m++) {
+            //    System.out.println(charBuffer[m]);
+            //}
+            //System.out.println("MOOO END");
+            s.append(new String(charBuffer, startChar, i - startChar, StandardCharsets.ISO_8859_1)); // WORKS, ugly!
+            //s.append(charBuffer, startChar, i - startChar);
         }
     }
 
@@ -820,7 +828,8 @@ public class OptimizedRandomAccessFile {
             nextChar = 0;
         }
         for (int i = 0; i < buffer.length; i++) {
-            charBuffer[i] = (char) buffer[i];
+            //charBuffer[i] = (char) buffer[i];
+            charBuffer[i] = buffer[i];
         }
     }
 
