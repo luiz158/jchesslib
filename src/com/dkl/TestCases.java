@@ -11,6 +11,7 @@ public class TestCases {
 
     public void fenTest() {
 
+        System.out.println("TEST: fen reading & parsing");
         // starting position
         String fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         Board b = new Board(fen);
@@ -43,9 +44,6 @@ public class TestCases {
         ArrayList<Move> mvs = b.legalMoves();
         if(depth == 0) {
             int cnt = mvs.size();
-            //for(Move mi: mvs) {
-            //    System.out.println(mi.getUci());
-            //}
             return cnt;
         } else {
             // recursive case: for each possible move, apply
@@ -62,6 +60,7 @@ public class TestCases {
 
     public void runPerfT() {
 
+        System.out.println("TEST: PerfT");
         String fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         Board b = new Board(fen);
         System.out.println("Testing " + b.fen());
@@ -230,6 +229,7 @@ public class TestCases {
 
     public void runSanTest() {
 
+        System.out.println("TEST: san computation");
         Board b0 = new Board("rnbqkbnr/pppppppp/8/2R5/5R2/2R5/PPPPPPP1/1NBQKBN1 w - - 0 1");
         System.out.println("rnbqkbnr/pppppppp/8/2R5/5R2/2R5/PPPPPPP1/1NBQKBN1 w - - 0 1");
         ArrayList<Move> b0Legals = b0.legalMoves();
@@ -246,6 +246,7 @@ public class TestCases {
     }
 
     public void runBitSetTest() {
+        System.out.println("TEST: bit setting in int values");
         // e.g. distance one, i.e. index 1 (=left, up, down, right square) has
         // value 0x1C = MSB 00011100 LSB, i.e. king, queen, rook can
         // potentially attack
@@ -267,6 +268,7 @@ public class TestCases {
 
     public void runPgnPrintTest() {
 
+        System.out.println("TEST: simple PGN printing");
         Game g = new Game();
         g.setHeader("Event", "Knaurs Schachbuch");
         g.setHeader("Site", "Paris");
@@ -278,6 +280,8 @@ public class TestCases {
         g.setHeader("ECO", "C56");
 
         GameNode node = new GameNode();
+        Board rootBoard = new Board(true);
+        node.setBoard(rootBoard);
 
         g.applyMove(new Move("e2e4"));
         g.applyMove(new Move("e7e5"));
@@ -298,24 +302,17 @@ public class TestCases {
 
     public void pgnScanTest() {
 
+        System.out.println("TEST: scanning PGN for game offsets");
         String kingbase = "C:/Users/user/MyFiles/workspace/test_databases/KingBaseLite2016-03-E60-E99.pgn";
         String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
         String middleg = "C:/Users/user/MyFiles/workspace/test_databases/middleg.pgn";
         PgnReader reader = new PgnReader();
-
-/*
-        long startTime = System.currentTimeMillis();
-        ArrayList<Long> offsets = reader.scanPgn(kingbase, true);
-        long stopTime = System.currentTimeMillis();
-
-        long timeElapsed = stopTime - startTime;
-        System.out.println("elapsed time: "+(timeElapsed/1000)+" secs");
-
-        System.out.println(offsets.size());
-*/
+        if(reader.isIsoLatin1(millbase)) {
+            reader.setEncodingIsoLatin1();
+        }
 
         long startTime = System.currentTimeMillis();
-        ArrayList<Long> offsets = reader.scanPgn(millbase, true);
+        ArrayList<Long> offsets = reader.scanPgn(millbase);
         long stopTime = System.currentTimeMillis();
 
         long timeElapsed = stopTime - startTime;
@@ -350,14 +347,19 @@ public class TestCases {
     }
 
     public void pgnReadGameTest() {
+
+        System.out.println("TEST: reading single PGN game");
         String kingbase = "C:/Users/user/MyFiles/workspace/millbase_prev_last.pgn";
         OptimizedRandomAccessFile raf = null;
         PgnReader reader = new PgnReader();
+        if(reader.isIsoLatin1(kingbase)) {
+            reader.setEncodingIsoLatin1();
+        }
         PgnPrinter printer = new PgnPrinter();
         try {
             raf = new OptimizedRandomAccessFile(kingbase, "r");
             Game g = reader.readGame(raf);
-            System.out.println("reading game ok");
+            //System.out.println("reading game ok");
             String pgn = printer.printGame(g);
             System.out.println(pgn);
         } catch (IOException e) {
@@ -366,28 +368,29 @@ public class TestCases {
     }
 
     public void pgnReadMiddleGTest() {
+
+        System.out.println("TEST: reading all games from middleg.pgn");
         String middleg = "C:/Users/user/MyFiles/workspace/test_databases/middleg.pgn";
 
         OptimizedRandomAccessFile raf = null;
         PgnReader reader = new PgnReader();
-        ArrayList<Long> offsets = reader.scanPgn(middleg, true);
+        if(reader.isIsoLatin1(middleg)) {
+            reader.setEncodingIsoLatin1();
+        }
+        ArrayList<Long> offsets = reader.scanPgn(middleg);
 
         PgnPrinter printer = new PgnPrinter();
         try {
             raf = new OptimizedRandomAccessFile(middleg, "r");
             for (int i=0;i<offsets.size();i++) {
                 long offset_i = offsets.get(i);
-                System.out.println("reading game nr: "+(i+1));
+                //System.out.println("reading game nr: "+(i+1));
                 raf.seek(offset_i);
                 Game g = reader.readGame(raf);
-                System.out.println("reading game ok");
+                //System.out.println("reading game ok");
                 String pgn = printer.printGame(g);
                 System.out.println(pgn);
             }
-            //HashMap<String, String> header = reader.readSingleHeader(raf, offset_i);
-            //for (String key : header.keySet()) {
-            //    System.out.println(key + " " + header.get(key));
-            //}
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -395,68 +398,66 @@ public class TestCases {
 
     public void pgnReadAllMillBaseTest() {
 
-            String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
-            //String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millbase_end.pgn";
-            PgnReader reader = new PgnReader();
+        System.out.println("TEST: reading all games from millionbase-2.22.pgn");
+        String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
+        PgnReader reader = new PgnReader();
+        if(reader.isIsoLatin1(millbase)) {
+            reader.setEncodingIsoLatin1();
+        }
 
-            long startTime = System.currentTimeMillis();
-            ArrayList<Long> offsets = reader.scanPgn(millbase, true);
-            long stopTime = System.currentTimeMillis();
-            long timeElapsed = stopTime - startTime;
-            System.out.println("elapsed time for scanning: " + (timeElapsed / 1000) + " secs");
+        long startTime = System.currentTimeMillis();
+        ArrayList<Long> offsets = reader.scanPgn(millbase);
+        long stopTime = System.currentTimeMillis();
+        long timeElapsed = stopTime - startTime;
+        System.out.println("elapsed time for scanning: " + (timeElapsed / 1000) + " secs");
 
-            System.out.println(offsets.size());
-            OptimizedRandomAccessFile raf = null;
-            try {
-                raf = new OptimizedRandomAccessFile(millbase, "r");
-                startTime = System.currentTimeMillis();
-                for (int i = 0; i < offsets.size(); i++) {
-                //for (int i = 0; i < 1000; i++) {
-                    //System.out.println(i);
-                    long offset_i = offsets.get(i);
-                    if(i%100000 == 0) {
-                        System.out.println("i: "+i);
-                        stopTime = System.currentTimeMillis();
-                        timeElapsed = stopTime - startTime;
-                        System.out.println("elapsed time for reading each game: " + (timeElapsed / 1000) + " secs");
-                    }
-                    //HashMap<String, String> header = reader.readSingleHeader(raf, offset_i);
-                    //if (header.get("Event").equals("Barbera Open")) {
-                    //    matchCount += 1;
-                    //}
-                    raf.seek(offset_i);
-                    Game g = reader.readGame(raf);
-                    //PgnPrinter printer = new PgnPrinter();
-                    //System.out.println(printer.printGame(g));
+        System.out.println(offsets.size());
+        OptimizedRandomAccessFile raf = null;
+        try {
+            raf = new OptimizedRandomAccessFile(millbase, "r");
+            startTime = System.currentTimeMillis();
+            for (int i = 0; i < offsets.size(); i++) {
+                long offset_i = offsets.get(i);
+                if(i%100000 == 0) {
+                    System.out.println("i: "+i);
+                    stopTime = System.currentTimeMillis();
+                    timeElapsed = stopTime - startTime;
+                    System.out.println("elapsed time for reading each game: " + (timeElapsed / 1000) + " secs");
                 }
-                stopTime = System.currentTimeMillis();
-                timeElapsed = stopTime - startTime;
-                System.out.println("elapsed time for reading each game: " + (timeElapsed / 1000) + " secs");
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (raf != null) {
-                    try {
-                        raf.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                raf.seek(offset_i);
+                Game g = reader.readGame(raf);
+            }
+            stopTime = System.currentTimeMillis();
+            timeElapsed = stopTime - startTime;
+            System.out.println("elapsed time for reading each game: " + (timeElapsed / 1000) + " secs");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (raf != null) {
+                try {
+                    raf.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
-
-
+        }
     }
 
 
-    public void pgnReadSingleEntryTest() {
+    // using file open/close
+    public void pgnReadSingleEntryTestOpenClose() {
 
+        System.out.println("TEST: scanning offsets from PGN, and reading each hader w/ multiple fopen/close");
         String kingbase = "C:/Users/user/MyFiles/workspace/test_databases/KingBaseLite2016-03-E60-E99.pgn";
         String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
         String middleg = "C:/Users/user/MyFiles/workspace/test_databases/middleg.pgn";
         PgnReader reader = new PgnReader();
+        if(reader.isIsoLatin1(millbase)) {
+            reader.setEncodingIsoLatin1();
+        }
 
         long startTime = System.currentTimeMillis();
-        ArrayList<Long> offsets = reader.scanPgn(millbase, true);
+        ArrayList<Long> offsets = reader.scanPgn(millbase);
         long stopTime = System.currentTimeMillis();
         long timeElapsed = stopTime - startTime;
         System.out.println("elapsed time for scanning: "+(timeElapsed/1000)+" secs");
@@ -479,15 +480,17 @@ public class TestCases {
 
     }
 
-    public void pgnReadSingleEntryTest1() {
+    // using raf that is kept open
+    public void pgnReadSingleEntryTestSeekWithinRAF() {
 
+        System.out.println("TEST: scanning offsets from PGN, and reading each hader, keeping file open");
         String kingbase = "C:/Users/user/MyFiles/workspace/test_databases/KingBaseLite2016-03-E60-E99.pgn";
         String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
         String middleg = "C:/Users/user/MyFiles/workspace/test_databases/middleg.pgn";
         PgnReader reader = new PgnReader();
 
         long startTime = System.currentTimeMillis();
-        ArrayList<Long> offsets = reader.scanPgn(millbase, true);
+        ArrayList<Long> offsets = reader.scanPgn(millbase);
         long stopTime = System.currentTimeMillis();
         long timeElapsed = stopTime - startTime;
         System.out.println("elapsed time for scanning: " + (timeElapsed / 1000) + " secs");
@@ -522,144 +525,10 @@ public class TestCases {
         }
     }
 
-    /*
-    public void pgnReadSingleEntryTest2() {
-
-        String kingbase = "C:/Users/user/MyFiles/workspace/test_databases/KingBaseLite2016-03-E60-E99.pgn";
-        String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
-        String middleg = "C:/Users/user/MyFiles/workspace/test_databases/middleg.pgn";
-        PgnReader reader = new PgnReader();
-
-        long startTime = System.currentTimeMillis();
-        ArrayList<Long> offsets = reader.scanPgn(millbase, true);
-        long stopTime = System.currentTimeMillis();
-        long timeElapsed = stopTime - startTime;
-        System.out.println("elapsed time for scanning: "+(timeElapsed/1000)+" secs");
-
-        System.out.println(offsets.size());
-        OptimizedRandomAccessFile raf = null;
-        try {
-            raf = new OptimizedRandomAccessFile(millbase, "r");
-            int matchCount = 0;
-            startTime = System.currentTimeMillis();
-            for (int i = 0; i < offsets.size(); i++) {
-                long offset_i = offsets.get(i);
-                PgnEntry2 entry_i = reader.readSingleHeader2(raf, offset_i);
-                if (entry_i.event.equals("Barbera Open")) {
-                    matchCount += 1;
-                }
-            }
-            stopTime = System.currentTimeMillis();
-            timeElapsed = stopTime - startTime;
-            System.out.println("elapsed time for reading each header: " + (timeElapsed / 1000) + " secs");
-            System.out.println("games matching event 'Barabara Open' " + matchCount);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }  finally {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
-    public void pgnReadSingleEntryTest3() {
-
-        String kingbase = "C:/Users/user/MyFiles/workspace/test_databases/KingBaseLite2016-03-E60-E99.pgn";
-        String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
-        String middleg = "C:/Users/user/MyFiles/workspace/test_databases/middleg.pgn";
-        PgnReader reader = new PgnReader();
-
-        long startTime = System.currentTimeMillis();
-        ArrayList<Long> offsets = reader.scanPgn(millbase, true);
-        long stopTime = System.currentTimeMillis();
-        long timeElapsed = stopTime - startTime;
-        System.out.println("elapsed time for scanning: "+(timeElapsed/1000)+" secs");
-
-        System.out.println(offsets.size());
-        FileInputStream raf = null;
-        try {
-            raf = new FileInputStream(millbase);
-            int matchCount = 0;
-            startTime = System.currentTimeMillis();
-            for (int i = 0; i < offsets.size(); i++) {
-                long offset_i = offsets.get(i);
-                PgnEntry2 entry_i = reader.readSingleHeader3(raf, offset_i);
-                //System.out.println(entry_i.event);
-                if (entry_i.event.equals("Barbera Open")) {
-                    matchCount += 1;
-                }
-            }
-            stopTime = System.currentTimeMillis();
-            timeElapsed = stopTime - startTime;
-            System.out.println("elapsed time for reading each header: " + (timeElapsed / 1000) + " secs");
-            System.out.println("games matching event 'Barabara Open' " + matchCount);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }  finally {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
-
-    public void pgnReadSingleEntryTest4() {
-
-        String kingbase = "C:/Users/user/MyFiles/workspace/test_databases/KingBaseLite2016-03-E60-E99.pgn";
-        String millbase = "C:/Users/user/MyFiles/workspace/test_databases/millionbase-2.22.pgn";
-        String middleg = "C:/Users/user/MyFiles/workspace/test_databases/middleg.pgn";
-        PgnReader reader = new PgnReader();
-
-        long startTime = System.currentTimeMillis();
-        ArrayList<Long> offsets = reader.scanPgn(millbase, true);
-        long stopTime = System.currentTimeMillis();
-        long timeElapsed = stopTime - startTime;
-        System.out.println("elapsed time for scanning: "+(timeElapsed/1000)+" secs");
-
-        System.out.println(offsets.size());
-        FileInputStream raf = null;
-        try {
-            raf = new FileInputStream(millbase);
-            int matchCount = 0;
-            startTime = System.currentTimeMillis();
-            for (int i = 0; i < offsets.size(); i++) {
-                long offset_i = offsets.get(i);
-                HashMap<String,String> entry_i = reader.readSingleHeader4(raf, offset_i);
-                //System.out.println(entry_i.get("Event"));
-                if (entry_i.get("Event") != null && entry_i.get("Event").equals("Barbera Open")) {
-                    matchCount += 1;
-                }
-            }
-            stopTime = System.currentTimeMillis();
-            timeElapsed = stopTime - startTime;
-            System.out.println("elapsed time for reading each header: " + (timeElapsed / 1000) + " secs");
-            System.out.println("games matching event 'Barabara Open' " + matchCount);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }  finally {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-*/
 
     public void runZobristTest() {
+
+        System.out.println("TEST: zobrist hashing");
 
         Board b = new Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         long key = b.getZobrist();

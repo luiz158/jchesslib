@@ -1,5 +1,8 @@
 package com.dkl;
 
+import com.ibm.icu.text.CharsetDetector;
+import com.ibm.icu.text.CharsetMatch;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -14,12 +17,65 @@ public class PgnReader {
     String currentLine;  // current line
     int currentIdx = 0; // current index
     Stack<GameNode> gameStack;
+    String encoding;
 
     public PgnReader() {
         gameStack = new Stack<>();
+         this.encoding = "UTF-8";
     }
 
+    public void setEncodingUTF8() {
+        this.encoding = "UTF-8";
+    }
 
+    public void setEncodingIsoLatin1() {
+        this.encoding = "ISO-8859-1";
+    }
+
+    public boolean isIsoLatin1(String filename) {
+
+        boolean isLatin1 = false;
+        OptimizedRandomAccessFile raf = null;
+        ArrayList<Byte> bytesRead = new ArrayList<>();
+        String line = "";
+        try {
+            raf = new OptimizedRandomAccessFile(filename, "r");
+            CharsetDetector detector = new CharsetDetector();
+            // read the first line, and from
+            // the first 10000 lines read all tags and comments
+            int i=0;
+            while((line = raf.readLine()) != null && i < 1000) {
+                if(i == 0 || (line.contains("[") || line.contains("{") || line.contains("}"))) {
+                    byte[] lineBytes = line.getBytes("ISO-8859-1");
+                    for (int j = 0; j < lineBytes.length; j++) {
+                        bytesRead.add(lineBytes[j]);
+                    }
+                }
+                i++;
+            }
+            byte[] primBytesRead = new byte[bytesRead.size()];
+            for(i = 0; i < bytesRead.size(); i++) {
+                primBytesRead[i] = bytesRead.get(i).byteValue();
+            }
+            detector.setText(primBytesRead);
+            CharsetMatch match = detector.detect();
+            String encoding = match.getName();
+            if(encoding.equals("ISO-8859-1")) {
+                isLatin1 = true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if(raf != null) {
+                try {
+                    raf.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return isLatin1;
+    }
 
 
     /*
@@ -64,21 +120,8 @@ public class PgnReader {
     */
 
 
-    /*
-    int PgnReader::readGameFromString(QString &pgn_string, chess::Game *g) {
-        QTextStream in(&pgn_string);
-        return this->readGame(in, g);
-    }
 
-    int PgnReader::readGameFromString(QString &pgn_string, quint64 offset, chess::Game *g) {
-        QString substring = QString(pgn_string.mid(offset, pgn_string.size()));
-        QTextStream in(&substring);
-        return this->readGame(in, g);
-    }
-     */
-
-
-    ArrayList<Long> scanPgn(String filename, boolean isUtf8) {
+    ArrayList<Long> scanPgn(String filename) {
 
         ArrayList<Long> offsets = new ArrayList<>();
 
@@ -131,46 +174,15 @@ public class PgnReader {
 
     public HashMap<String, String> readSingleHeader(String filename, long offset) {
 
-        HashMap<String, String> header = new HashMap<>();
-
-        String currentLine = "";
         OptimizedRandomAccessFile raf = null;
-
-        boolean continueSearch = true;
-        boolean foundHeader = false;
-
+        HashMap<String, String> header = null;
         try {
             raf = new OptimizedRandomAccessFile(filename, "r");
-            raf.seek(offset);
-            while ((currentLine = raf.readLine()) != null && continueSearch) {
-                // skip comments
-                if (currentLine.startsWith("%")) {
-                    continue;
-                }
-
-                if (currentLine.startsWith("[")) {
-
-                    foundHeader = true;
-                    //
-                    if (currentLine.length() > 4) {
-                        int spaceOffset = currentLine.indexOf(' ');
-                        int firstQuote = currentLine.indexOf('"');
-                        int secondQuote = currentLine.indexOf('"', firstQuote + 1);
-                        String tag = currentLine.substring(1, spaceOffset);
-                        String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        header.put(tag, value);
-                    }
-                } else {
-                    if (foundHeader) {
-                        continueSearch = false;
-                        break;
-                    }
-                }
-            }
+            header = readSingleHeader(raf, offset);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (raf != null) {
+            if (raf == null) {
                 try {
                     raf.close();
                 } catch (IOException e) {
@@ -178,8 +190,13 @@ public class PgnReader {
                 }
             }
         }
-        return header;
+        if (header == null) {
+            return new HashMap<String, String>();
+        } else {
+            return header;
+        }
     }
+
 
     public HashMap<String, String> readSingleHeader(OptimizedRandomAccessFile raf, long offset) {
 
@@ -208,8 +225,7 @@ public class PgnReader {
                         int secondQuote = currentLine.indexOf('"', firstQuote + 1);
                         String tag = currentLine.substring(1, spaceOffset);
                         String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        String valueUtf8 = new String(value.getBytes("ISO-8859-1"), "UTF-8");
-                        header.put(tag, valueUtf8);
+                        header.put(tag, new String(value.getBytes("ISO-8859-1"), encoding));
                     }
                 } else {
                     if (foundHeader) {
@@ -224,198 +240,6 @@ public class PgnReader {
         return header;
     }
 
-    /*
-    public PgnEntry2 readSingleHeader2(OptimizedRandomAccessFile raf, long offset) {
-
-        PgnEntry2 entry = new PgnEntry2();
-
-        String currentLine = "";
-
-        boolean continueSearch = true;
-        boolean foundHeader = false;
-
-        try {
-            raf.seek(offset);
-            while ((currentLine = raf.readLine()) != null && continueSearch) {
-                // skip comments
-                if (currentLine.startsWith("%")) {
-                    continue;
-                }
-
-                if (currentLine.startsWith("[")) {
-
-                    foundHeader = true;
-                    //
-                    if (currentLine.length() > 4) {
-                        int spaceOffset = currentLine.indexOf(' ');
-                        int firstQuote = currentLine.indexOf('"');
-                        int secondQuote = currentLine.indexOf('"', firstQuote + 1);
-                        String tag = currentLine.substring(1, spaceOffset);
-                        String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        //header.put(tag, value);
-                        if (tag.equals("Event")) {
-                            entry.event = value;
-                        }
-                        if (tag.equals("Site")) {
-                            entry.site = value;
-                        }
-                        if (tag.equals("Date")) {
-                            entry.date = value;
-                        }
-                        if (tag.equals("Round")) {
-                            entry.round = value;
-                        }
-                        if (tag.equals("White")) {
-                            entry.white = value;
-                        }
-                        if (tag.equals("Black")) {
-                            entry.black = value;
-                        }
-                        if (tag.equals("Result")) {
-                            entry.result = value;
-                        }
-                        if (tag.equals("ECO")) {
-                            entry.eco = value;
-                        }
-
-                    }
-                } else {
-                    if (foundHeader) {
-                        continueSearch = false;
-                        break;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return entry;
-    }
-
-    public PgnEntry2 readSingleHeader3(FileInputStream fis, long offset) {
-
-        PgnEntry2 entry = new PgnEntry2();
-
-        String currentLine = "";
-
-        boolean continueSearch = true;
-        boolean foundHeader = false;
-
-        //InputStreamReader isr = null;
-        //BufferedReader br = null;
-
-        try {
-            fis.getChannel().position(0);
-            fis.skip(offset);
-            InputStreamReader isr = new InputStreamReader(fis);
-            BufferedReader br = new BufferedReader(isr);
-            while ((currentLine = br.readLine()) != null && continueSearch) {
-                // skip comments
-                if (currentLine.startsWith("%")) {
-                    continue;
-                }
-
-                if (currentLine.startsWith("[")) {
-
-                    foundHeader = true;
-                    //
-                    if (currentLine.length() > 4) {
-                        int spaceOffset = currentLine.indexOf(' ');
-                        int firstQuote = currentLine.indexOf('"');
-                        int secondQuote = currentLine.indexOf('"', firstQuote + 1);
-                        String tag = currentLine.substring(1, spaceOffset);
-                        String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        //System.out.println(tag+ " "+value);
-                        //header.put(tag, value);
-                        if (tag.equals("Event")) {
-                            entry.event = value;
-                        }
-                        if (tag.equals("Site")) {
-                            entry.site = value;
-                        }
-                        if (tag.equals("Date")) {
-                            entry.date = value;
-                        }
-                        if (tag.equals("Round")) {
-                            entry.round = value;
-                        }
-                        if (tag.equals("White")) {
-                            entry.white = value;
-                        }
-                        if (tag.equals("Black")) {
-                            entry.black = value;
-                        }
-                        if (tag.equals("Result")) {
-                            entry.result = value;
-                        }
-                        if (tag.equals("ECO")) {
-                            entry.eco = value;
-                        }
-
-                    }
-                } else {
-                    if (foundHeader) {
-                        continueSearch = false;
-                        break;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return entry;
-    }
-
-    public HashMap<String, String> readSingleHeader4(FileInputStream fis, long offset) {
-
-        HashMap<String, String> entry = new HashMap<>();
-
-        String currentLine = "";
-
-        boolean continueSearch = true;
-        boolean foundHeader = false;
-
-        //InputStreamReader isr = null;
-        //BufferedReader br = null;
-
-        try {
-            fis.getChannel().position(0);
-            fis.skip(offset);
-            InputStreamReader isr = new InputStreamReader(fis);
-            BufferedReader br = new BufferedReader(isr);
-            while ((currentLine = br.readLine()) != null && continueSearch) {
-                // skip comments
-                if (currentLine.startsWith("%")) {
-                    continue;
-                }
-
-                if (currentLine.startsWith("[")) {
-
-                    foundHeader = true;
-                    //
-                    if (currentLine.length() > 4) {
-                        int spaceOffset = currentLine.indexOf(' ');
-                        int firstQuote = currentLine.indexOf('"');
-                        int secondQuote = currentLine.indexOf('"', firstQuote + 1);
-                        String tag = currentLine.substring(1, spaceOffset);
-                        //System.out.println(tag);
-                        String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        entry.put(tag, value);
-                    }
-                } else {
-                    if (foundHeader) {
-                        continueSearch = false;
-                        break;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return entry;
-    }
-
-     */
 
     private boolean isCol(char c) {
         if(c >= 'a' && c <= 'h') {
@@ -439,20 +263,20 @@ public class PgnReader {
         GameNode next = new GameNode();
 
         Board currentBoard = this.currentNode.getBoard();
-        //System.out.println(currentBoard.toString());
-        //System.out.println("adding: " + m.getUci());
-
-        Board childBoard = currentBoard.makeCopy();
-        childBoard.apply(m);
-        next.setMove(m);
-        next.setBoard(childBoard);
-        next.setParent(this.currentNode);
-        this.currentNode.addVariation(next);
-
-        this.currentNode = next;
+        try {
+            Board childBoard = currentBoard.makeCopy();
+            childBoard.apply(m);
+            next.setMove(m);
+            next.setBoard(childBoard);
+            next.setParent(this.currentNode);
+            this.currentNode.addVariation(next);
+            this.currentNode = next;
+        } catch(IllegalArgumentException e) {
+            e.printStackTrace();
+        }
     }
 
-    private boolean parsePawnMove() {
+    private void parsePawnMove() {
 
         //System.out.println("PAWN MOVE "+currentLine.substring(currentIdx, currentIdx+3));
         int col = Board.alphaToPos(Character.toUpperCase(currentLine.charAt(currentIdx)));
@@ -497,26 +321,21 @@ public class PgnReader {
                                 Move m = new Move(col, row_from, col_to, row_to, currentLine.charAt(currentIdx+5));
                                 this.addMove(m);
                                 currentIdx += 6;
-                                return true;
                             } else { // just a normal move, like exd4
                                 //System.out.println("333333");
                                 Move m = new Move(col, row_from, col_to, row_to);
                                 //System.out.println("calculated pawn: "+m.getUci());
                                 this.addMove(m);
                                 currentIdx += 4;
-                                return true;
                             }
                         } else {
                             currentIdx += 4;
-                            return false;
                         }
                     } else {
                         currentIdx += 4;
-                        return false;
                     }
                 } else {
                     currentIdx += 2;
-                    return false;
                 }
             } else { // only other case: must be a number
                 if(this.isRow(currentLine.charAt(currentIdx+1))) {
@@ -550,28 +369,23 @@ public class PgnReader {
                             //System.out.println("MOVE UCI "+m.getUci());
                             this.addMove(m);
                             currentIdx += 4;
-                            return true;
                         } else { // not a promotion, just a standard pawn move
                             Move m = new Move(col, from_row, col, row);
                             this.addMove(m);
                             currentIdx += 2;
-                            return true;
                         }
                     } else {
                         currentIdx+=2;
-                        return false;
                     }
                 } else {
                     currentIdx+=2;
-                    return false;
                 }
             }
         }
         currentIdx += 2;
-        return true;
     }
 
-    private boolean createPieceMove(int pieceType, int to_col, int to_row) {
+    private void createPieceMove(int pieceType, int to_col, int to_row) {
 
         Board board = currentNode.getBoard();
         int to_internal = board.xyToInternal(to_col, to_row);
@@ -579,20 +393,16 @@ public class PgnReader {
         if (pseudos.size() == 1) {
             Move m = pseudos.get(0);
             this.addMove(m);
-            return true;
         } else {
             ArrayList<Move> legals = board.legalsFromPseudos(pseudos);
             if (legals.size() == 1) {
                 Move m = legals.get(0);
                 this.addMove(m);
-                return true;
-            } else {
-                return false;
             }
         }
     }
 
-    private boolean createPieceMove(int pieceType, int to_col, int to_row, char qc_from_col) {
+    private void createPieceMove(int pieceType, int to_col, int to_row, char qc_from_col) {
 
         Board board = currentNode.getBoard();
         int from_col = Board.alphaToPos(Character.toUpperCase(qc_from_col));
@@ -608,20 +418,16 @@ public class PgnReader {
         if(filter.size() == 1) {
             Move m = filter.get(0);
             this.addMove(m);
-            return true;
         } else {
             ArrayList<Move> legals = board.legalsFromPseudos(pseudos);
             if(legals.size() == 1) {
                 Move m = legals.get(0);
                 this.addMove(m);
-                return true;
-            } else {
-                return false;
             }
         }
     }
 
-    private boolean createPieceMove(int pieceType, int to_col, int to_row, int from_row) {
+    private void createPieceMove(int pieceType, int to_col, int to_row, int from_row) {
 
         Board board = currentNode.getBoard();
         int to_internal = board.xyToInternal(to_col, to_row);
@@ -636,20 +442,16 @@ public class PgnReader {
         if(filter.size() == 1) {
             Move m = filter.get(0);
             this.addMove(m);
-            return true;
         } else {
             ArrayList<Move> legals = board.legalsFromPseudos(pseudos);
             if(legals.size() == 1) {
                 Move m = legals.get(0);
                 this.addMove(m);
-                return true;
-            } else {
-                return false;
             }
         }
     }
 
-    private boolean parsePieceMove(int pieceType) {
+    private void parsePieceMove(int pieceType) {
         //System.out.println("parse piece move");
         //if(currentIdx + 4 < currentLine.length()) {
         //    System.out.println(currentLine.substring(currentIdx, currentIdx+4));
@@ -678,7 +480,11 @@ public class PgnReader {
                         currentIdx+=2;
                         //System.out.println("33333333333");
                         // standard move, i.e. Qe4
-                        return createPieceMove(pieceType, to_col, to_row);
+                        try {
+                            createPieceMove(pieceType, to_col, to_row);
+                        } catch (IllegalArgumentException e) {
+                            e.printStackTrace();
+                        }
                     } else {
                         // fix: skip x if we have Qexe5
                         int skipForTake = 0;
@@ -701,19 +507,20 @@ public class PgnReader {
                                 // move w/ disambig on col, i.e. Qee4
                                 // provide line[idx] to cratePieceMove to resolve disamb.
                                 currentIdx+=3;
-                                return createPieceMove(pieceType, to_col, to_row, currentLine.charAt(currentIdx-(3+skipForTake)));
+                                try {
+                                    createPieceMove(pieceType, to_col, to_row, currentLine.charAt(currentIdx - (3 + skipForTake)));
+                                } catch (IllegalArgumentException e) {
+                                    e.printStackTrace();
+                                }
                             } else {
                                 currentIdx+=4;
-                                return false;
                             }
                         } else {
                             currentIdx+=3;
-                            return false;
                         }
                     }
                 } else {
                     currentIdx+=2;
-                    return false;
                 }
             } else {
                 //System.out.println("checking else");
@@ -735,19 +542,20 @@ public class PgnReader {
                         int to_row = Character.getNumericValue(currentLine.charAt(currentIdx+2)) - 1;
                         // parse the ambig move
                         currentIdx+=3;
-                        return createPieceMove(pieceType, to_col, to_row, from_row);
+                        try {
+                            createPieceMove(pieceType, to_col, to_row, from_row);
+                        } catch (IllegalArgumentException e) {
+                            e.printStackTrace();
+                        }
                     } else {
                         currentIdx+=3;
-                        return false;
                     }
                 } else {
                     currentIdx+=2;
-                    return false;
                 }
             }
         } else {
             currentIdx+=2;
-            return false;
         }
     }
 
@@ -975,13 +783,14 @@ public class PgnReader {
                         int spaceOffset = currentLine.indexOf(' ');
                         int firstQuote = currentLine.indexOf('"');
                         int secondQuote = currentLine.indexOf('"', firstQuote + 1);
-                        String tag = currentLine.substring(1, spaceOffset);
-                        String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        // System.out.println(tag+value);
-                        if (tag.equals("FEN")) {
-                            startingFen = value;
-                        } else {
-                            g.setHeader(tag, value);
+                        if(spaceOffset > 1 && firstQuote >= 0 && secondQuote >= 0 && secondQuote > (firstQuote+1)) {
+                            String tag = currentLine.substring(1, spaceOffset);
+                            String value = currentLine.substring(firstQuote + 1, secondQuote);
+                            if (tag.equals("FEN")) {
+                                startingFen = value;
+                            } else {
+                                g.setHeader(tag, new String(value.getBytes("ISO-8859-1"), encoding));
+                            }
                         }
                     }
                     continue;
@@ -998,11 +807,15 @@ public class PgnReader {
         // try to set the starting fen, if it exists
         //System.out.println("starting fen: "+startingFen);
         if (!startingFen.isEmpty()) {
-            Board boardFen = new Board(startingFen);
-            if (!boardFen.isConsistent()) {
-                return g;
-            } else {
-                currentNode.setBoard(boardFen);
+            try {
+                Board boardFen = new Board(startingFen);
+                if (!boardFen.isConsistent()) {
+                    return g;
+                } else {
+                    currentNode.setBoard(boardFen);
+                }
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
             }
         }
 
@@ -1142,7 +955,7 @@ public class PgnReader {
                         //System.out.println(end);
                         if (end >= 0) {
                             String comment_line = rest_of_line.substring(0, end+1);
-                            currentNode.setComment(comment_line);
+                            currentNode.setComment(new String(comment_line.getBytes("ISO-8859-1"), encoding));
                             currentIdx = currentIdx + end + 1;
                         } else {
                             // get comment over multiple lines
@@ -1158,6 +971,13 @@ public class PgnReader {
                             int end_index = -1;
                             while (linesRead < 500) { // what if we never find } ??? -> stop after 500 lines
                                 currentLine = raf.readLine();
+                                if(currentLine == null) {
+                                    currentLine = "";
+                                    end_index = -1;
+                                    break;
+                                }
+                                //System.out.println("current line");
+                                //System.out.println(currentLine);
                                 linesRead += 1;
                                 if (currentLine.contains("}")) {
                                     end_index = currentLine.indexOf("}");
@@ -1167,11 +987,13 @@ public class PgnReader {
                                 }
                             }
                             if (end_index >= 0) {
+                                //System.out.println("current line");
+                                //System.out.println(currentLine);
                                 comment_lines.append(currentLine, 0, end_index);
                                 comment_lines.append("\n");
                                 currentIdx = end_index + 1;
                             }
-                            currentNode.setComment(comment_lines.toString());
+                            currentNode.setComment(new String(comment_lines.toString().getBytes("ISO-8859-1"), encoding));
                         }
                     }
                 }
@@ -1186,18 +1008,4 @@ public class PgnReader {
     }
 
 }
-
-    /*
-
-
-    int PgnReader::readGame(QTextStream &in, qint64 offset, chess::Game *g) {
-
-
-        if(offset != 0 && offset > 0) {
-            in.seek(offset);
-        }
-        return this->readGame(in, g);
-    }
-    */
-
 

@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="jchesslib:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/jchesslib_jar</output-path>
+    <root id="archive" name="jchesslib.jar">
+      <element id="module-output" name="jchesslib" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/ibm/icu/icu4j/65.1/icu4j-65.1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

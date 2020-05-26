@@ -797,13 +797,7 @@ public class OptimizedRandomAccessFile {
             if (s == null) {
                 s = new StringBuilder(defaultExpectedLineLength);
             }
-            //System.out.println("MOOO");
-            //for(int m=0;m<charBuffer.length;m++) {
-            //    System.out.println(charBuffer[m]);
-            //}
-            //System.out.println("MOOO END");
             s.append(new String(charBuffer, startChar, i - startChar, StandardCharsets.ISO_8859_1)); // WORKS, ugly!
-            //s.append(charBuffer, startChar, i - startChar);
         }
     }
 
@@ -828,7 +822,6 @@ public class OptimizedRandomAccessFile {
             nextChar = 0;
         }
         for (int i = 0; i < buffer.length; i++) {
-            //charBuffer[i] = (char) buffer[i];
             charBuffer[i] = buffer[i];
         }
     }
