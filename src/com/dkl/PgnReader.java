@@ -182,7 +182,7 @@ public class PgnReader {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (raf == null) {
+            if (raf != null) {
                 try {
                     raf.close();
                 } catch (IOException e) {
@@ -209,7 +209,7 @@ public class PgnReader {
 
         try {
             raf.seek(offset);
-            while ((currentLine = raf.readLine()) != null && continueSearch) {
+            while ((currentLine = raf.readLine()) != null) {
                 // skip comments
                 if (currentLine.startsWith("%")) {
                     continue;
@@ -229,7 +229,6 @@ public class PgnReader {
                     }
                 } else {
                     if (foundHeader) {
-                        continueSearch = false;
                         break;
                     }
                 }
@@ -321,21 +320,26 @@ public class PgnReader {
                                 Move m = new Move(col, row_from, col_to, row_to, currentLine.charAt(currentIdx+5));
                                 this.addMove(m);
                                 currentIdx += 6;
+                                return;
                             } else { // just a normal move, like exd4
                                 //System.out.println("333333");
                                 Move m = new Move(col, row_from, col_to, row_to);
                                 //System.out.println("calculated pawn: "+m.getUci());
                                 this.addMove(m);
                                 currentIdx += 4;
+                                return;
                             }
                         } else {
                             currentIdx += 4;
+                            return;
                         }
                     } else {
                         currentIdx += 4;
+                        return;
                     }
                 } else {
                     currentIdx += 2;
+                    return;
                 }
             } else { // only other case: must be a number
                 if(this.isRow(currentLine.charAt(currentIdx+1))) {
@@ -369,20 +373,25 @@ public class PgnReader {
                             //System.out.println("MOVE UCI "+m.getUci());
                             this.addMove(m);
                             currentIdx += 4;
+                            return;
                         } else { // not a promotion, just a standard pawn move
                             Move m = new Move(col, from_row, col, row);
                             this.addMove(m);
                             currentIdx += 2;
+                            return;
                         }
                     } else {
                         currentIdx+=2;
+                        return;
                     }
                 } else {
                     currentIdx+=2;
+                    return;
                 }
             }
         }
         currentIdx += 2;
+        return;
     }
 
     private void createPieceMove(int pieceType, int to_col, int to_row) {
@@ -514,13 +523,16 @@ public class PgnReader {
                                 }
                             } else {
                                 currentIdx+=4;
+                                return;
                             }
                         } else {
                             currentIdx+=3;
+                            return;
                         }
                     }
                 } else {
                     currentIdx+=2;
+                    return;
                 }
             } else {
                 //System.out.println("checking else");
@@ -549,18 +561,21 @@ public class PgnReader {
                         }
                     } else {
                         currentIdx+=3;
+                        return;
                     }
                 } else {
                     currentIdx+=2;
+                    return;
                 }
             }
         } else {
             currentIdx+=2;
+            return;
         }
     }
 
 
-    private boolean parseCastleMove() {
+    private void parseCastleMove() {
 
         int lineSize = currentLine.length();
         if(currentIdx+4 < lineSize && ( currentLine.substring(currentIdx,currentIdx+5).equals("O-O-O")
@@ -570,12 +585,12 @@ public class PgnReader {
                 Move m = new Move(CONSTANTS.E1,CONSTANTS.C1);
                 this.addMove(m);
                 currentIdx += 5;
-                return true;
+                return;
             } else {
                 Move m = new Move(CONSTANTS.E8,CONSTANTS.C8);
                 this.addMove(m);
                 currentIdx += 5;
-                return true;
+                return;
             }
         }
         if(currentIdx+2 < lineSize && ( currentLine.substring(currentIdx,currentIdx+3).equals("O-O"))) {  // || line.mid(idx,3) == QString::fromLatin1("0-0"))) {
@@ -583,16 +598,16 @@ public class PgnReader {
                 Move m = new Move(CONSTANTS.E1,CONSTANTS.G1);
                 this.addMove(m);
                 currentIdx += 3;
-                return true;
+                return;
             } else {
                 Move m = new Move(CONSTANTS.E8,CONSTANTS.G8);
                 this.addMove(m);
                 currentIdx += 3;
-                return true;
+                return;
             }
         }
         currentIdx+=1;
-        return false;
+        return;
     }
 
 
@@ -681,7 +696,7 @@ public class PgnReader {
                             }
                         }
                         if(currentIdx+2 < lineSize && currentLine.charAt(currentIdx+2) == '/') {
-                            if(currentIdx+6 < lineSize && currentLine.substring(currentIdx,currentIdx+6).equals("1/2-1/2")) {
+                            if(currentIdx+6 < lineSize && currentLine.substring(currentIdx,currentIdx+7).equals("1/2-1/2")) {
                                 return CONSTANTS.TKN_RES_DRAW;
                             }
                         }
@@ -866,8 +881,8 @@ public class PgnReader {
                 while (currentIdx < currentLine.length()) {
                     //if(currentIdx + 3 < currentLine.length()) {
                     //    System.out.println("TOKEN: " + currentLine.substring(currentIdx, currentIdx+4));
-                        //System.out.println("current node is null: " + (currentNode == null));
-                    //    System.out.println(currentNode.getBoard().toString());
+                       //System.out.println("current node is null: " + (currentNode == null));
+                        //System.out.println(currentNode.getBoard().toString());
                     //}
                     int tkn = getNetxtToken();
                     if (tkn == CONSTANTS.TKN_EOL) {
@@ -962,7 +977,7 @@ public class PgnReader {
                             StringBuilder comment_lines = new StringBuilder();
                             //String comment_line = currentLine.substring(currentIdx + 1, currentLine.length() - (currentIdx + 1));
                             String comment_line = currentLine.substring(currentIdx + 1);
-                            comment_lines.append(comment_line+"\n");
+                            comment_lines.append(comment_line).append("\n");
                             // we already have the comment part of the current line,
                             // so read-in the next line, and then loop until we find
                             // the end marker "}"
@@ -983,7 +998,7 @@ public class PgnReader {
                                     end_index = currentLine.indexOf("}");
                                     break;
                                 } else {
-                                    comment_lines.append(currentLine+"\n");
+                                    comment_lines.append(currentLine).append("\n");
                                 }
                             }
                             if (end_index >= 0) {

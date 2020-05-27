@@ -115,7 +115,7 @@ public class PgnPrinter {
         } else {
             res += "*";
         }
-        this.writeToken(res += " ");
+        this.writeToken(res + " ");
     }
 
     private void beginVariation() {
@@ -147,6 +147,7 @@ public class PgnPrinter {
         int cntVar = g.getVariations().size();
         if(cntVar > 0) {
             GameNode mainVariation = g.getVariation(0);
+            //System.out.println(g.getBoard());
             this.printMove(mainVariation);
             // write nags
             for(Integer ni : mainVariation.getNags()) {

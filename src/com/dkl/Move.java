@@ -66,7 +66,7 @@ public class Move {
         if (promotionPiece == 'Q') {
             this.promotionPiece = CONSTANTS.QUEEN;
         }
-        if (promotionPiece < 0) {
+        if (this.promotionPiece < 0) {
             throw new IllegalArgumentException("Illegal Promotion Piece: " + Character.toString(promotionPiece));
         }
         this.isNullMove = false;

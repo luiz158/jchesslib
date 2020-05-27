@@ -72,9 +72,7 @@ public class Game {
 
     public ArrayList<String> getTags() {
         ArrayList<String> tags = new ArrayList<String>();
-        for (String key : this.pgnHeaders.keySet()) {
-            tags.add(key);
-        }
+        tags.addAll(this.pgnHeaders.keySet());
         return tags;
     }
 

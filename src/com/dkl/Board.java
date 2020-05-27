@@ -830,7 +830,7 @@ public class Board {
                     }
                 }
                 if((internalToSquare == CONSTANTS.ANY_SQUARE || idx_1up == internalToSquare)
-                        && this.board[idx_1up] != 0xFF && this.board[idx_1up] == 0) {
+                        && this.board[idx_1up] == 0) {
                     // if it's a promotion square, add four moves
                     if((color==CONSTANTS.WHITE && (idx_1up / 10 == 9)) || (color==CONSTANTS.BLACK && (idx_1up / 10 == 2))) {
                         //assert(this->board[from] != 0xff);
@@ -1189,10 +1189,10 @@ public class Board {
                     // if the move is not by the king
                     if (i != m.from) {
                         // apply the move, check if king is attacked, and decide
-                        boolean legal = false;
+                        //boolean legal = false;
                         //Board b_temp = this.makeCopy();
                         this.apply(m);      // note: if we do not copy here (performance) then legals() destorys our undo!
-                        legal = !this.isAttacked(i, !color);
+                        boolean legal = !this.isAttacked(i, !color);
                         this.undo();
                         return legal;
                     } else {
@@ -1249,10 +1249,10 @@ public class Board {
                         }
                         // if none of the castles cases triggered, we have a standard king move
                         // just check if king isn't attacked after applying the move
-                        boolean legal = false;
+                        //boolean legal = false;
                         this.apply(m);
                         //Board b_temp = this.makeCopy();
-                        legal = !this.isAttacked(m.to, !color);
+                        boolean legal = !this.isAttacked(m.to, !color);
                         this.undo();
                         return legal;
                     }
@@ -1776,9 +1776,7 @@ public class Board {
             }
         }
         // exactly one white and black king exist on board
-        if(whiteKingPos < 21 || whiteKingPos >= 99
-                || blackKingPos < 21 || blackKingPos >= 99
-                || cntWhiteKing != 1 || cntBlackKing != 1) {
+        if(cntWhiteKing != 1 || cntBlackKing != 1) {
             return false;
         }
         // white and black king at least on field apart

@@ -279,9 +279,8 @@ public class TestCases {
         g.setHeader("Result", "1-0");
         g.setHeader("ECO", "C56");
 
-        GameNode node = new GameNode();
         Board rootBoard = new Board(true);
-        node.setBoard(rootBoard);
+        g.getRootNode().setBoard(rootBoard);
 
         g.applyMove(new Move("e2e4"));
         g.applyMove(new Move("e7e5"));
@@ -335,10 +334,12 @@ public class TestCases {
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } finally {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if(raf != null) {
+                    try {
+                        raf.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -384,10 +385,10 @@ public class TestCases {
             raf = new OptimizedRandomAccessFile(middleg, "r");
             for (int i=0;i<offsets.size();i++) {
                 long offset_i = offsets.get(i);
-                //System.out.println("reading game nr: "+(i+1));
+                System.out.println("reading game nr: "+(i+1));
                 raf.seek(offset_i);
                 Game g = reader.readGame(raf);
-                //System.out.println("reading game ok");
+                System.out.println("reading game ok");
                 String pgn = printer.printGame(g);
                 System.out.println(pgn);
             }
@@ -418,6 +419,7 @@ public class TestCases {
             startTime = System.currentTimeMillis();
             for (int i = 0; i < offsets.size(); i++) {
                 long offset_i = offsets.get(i);
+                //System.out.println("reading game "+i);
                 if(i%100000 == 0) {
                     System.out.println("i: "+i);
                     stopTime = System.currentTimeMillis();

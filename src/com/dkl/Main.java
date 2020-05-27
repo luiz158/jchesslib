@@ -11,7 +11,6 @@ public class Main {
         if (args.length > 0) {
             String filename = args[0];
             if (filename.equals("run-all-tests")) {
-
                 TestCases cases = new TestCases();
                 cases.fenTest();
                 cases.pgnReadGameTest();
