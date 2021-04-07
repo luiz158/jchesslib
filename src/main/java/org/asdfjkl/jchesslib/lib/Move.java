@@ -1,4 +1,22 @@
-package com.dkl;
+/* JerryFX - A Chess Graphical User Interface
+ * Copyright (C) 2020 Dominik Klein
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+package org.asdfjkl.jchesslib.lib;
 
 public class Move {
 
@@ -44,14 +62,8 @@ public class Move {
 
     public Move(int fromColumn, int fromRow, int toColumn, int toRow, char promotionPiece) {
 
-        //System.out.println("from col: "+fromColumn + " tocol: "+toColumn);
-        //System.out.println("from row: "+fromRow + " torow: "+toRow);
         this.from = ((fromRow + 2) * 10) + (fromColumn + 1);
         this.to = ((toRow + 2) * 10) + (toColumn + 1);
-
-        //System.out.println("intfrom: "+this.from);
-        //System.out.println("intto: "+this.to);
-
 
         this.promotionPiece = -1;
         if (promotionPiece == 'N') {
@@ -67,10 +79,22 @@ public class Move {
             this.promotionPiece = CONSTANTS.QUEEN;
         }
         if (this.promotionPiece < 0) {
-            throw new IllegalArgumentException("Illegal Promotion Piece: " + Character.toString(promotionPiece));
+            throw new IllegalArgumentException("Illegal Promotion Piece: " + promotionPiece);
         }
         this.isNullMove = false;
 
+    }
+
+    public void setPromotionPiece(int promotionPiece) {
+        this.promotionPiece = promotionPiece;
+    }
+
+    public int getMoveSourceSquare() {
+        return from;
+    }
+
+    public int getMoveTargetSquare() {
+        return to;
     }
 
     private int alphaToPos(char alpha) {
@@ -91,7 +115,7 @@ public class Move {
         } else if (alpha == 'H') {
             return 8;
         }
-        throw new IllegalArgumentException("alpha to pos called with: " + Character.toString(alpha));
+        throw new IllegalArgumentException("alpha to pos called with: " + alpha);
     }
 
 
@@ -142,12 +166,8 @@ public class Move {
             char colFrom = (char) ((this.from % 10) + 96);
             char rowFrom = (char) ((this.from / 10) + 47);
 
-            System.out.println(("from: "+this.from));
-
             char colTo = (char) ((this.to % 10) + 96);
             char rowTo = (char) ((this.to / 10) + 47);
-
-            System.out.println(("to: "+this.to));
 
             String uci = "";
             uci += colFrom;

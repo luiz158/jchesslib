@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 //package org.bitbucket.kienerj.io;
-package com.dkl;
+package org.asdfjkl.jchesslib.lib;
 
 import java.io.File;
 import java.io.FileDescriptor;

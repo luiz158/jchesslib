@@ -1,9 +1,25 @@
-package com.dkl;
+/* JerryFX - A Chess Graphical User Interface
+ * Copyright (C) 2020 Dominik Klein
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+package org.asdfjkl.jchesslib.lib;
+
+import java.io.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -43,8 +59,7 @@ public class TestCases {
         int count = 0;
         ArrayList<Move> mvs = b.legalMoves();
         if(depth == 0) {
-            int cnt = mvs.size();
-            return cnt;
+            return mvs.size();
         } else {
             // recursive case: for each possible move, apply
             // the move, do the recursive call and undo the move
@@ -343,8 +358,6 @@ public class TestCases {
                 }
             }
         }
-
-
     }
 
     public void pgnReadGameTest() {
@@ -431,7 +444,7 @@ public class TestCases {
             }
             stopTime = System.currentTimeMillis();
             timeElapsed = stopTime - startTime;
-            System.out.println("elapsed time for reading each game: " + (timeElapsed / 1000) + " secs");
+            System.out.println("elapsed time for reading all games: " + (timeElapsed / 1000) + " secs");
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -525,6 +538,64 @@ public class TestCases {
                 }
             }
         }
+    }
+
+    public void readGamesByStringTest() {
+
+        String s = "[Event \"Berlin\"]\n" +
+                "[Site \"Berlin GER\"]\n" +
+                "[Date \"1852.??.??\"]\n" +
+                "[EventDate \"?\"]\n" +
+                "[Round \"?\"]\n" +
+                "[Result \"1-0\"]\n" +
+                "[White \"Adolf Anderssen\"]\n" +
+                "[Black \"Jean Dufresne\"]\n" +
+                "[ECO \"C52\"]\n" +
+                "[WhiteElo \"?\"]\n" +
+                "[BlackElo \"?\"]\n" +
+                "[PlyCount \"47\"]\n" +
+                "\n" +
+                "1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.b4 Bxb4 5.c3 Ba5 6.d4 exd4 7.O-O\n" +
+                "d3 8.Qb3 Qf6 9.e5 Qg6 10.Re1 Nge7 11.Ba3 b5 12.Qxb5 Rb8 13.Qa4\n" +
+                "Bb6 14.Nbd2 Bb7 15.Ne4 Qf5 16.Bxd3 Qh5 17.Nf6+ gxf6 18.exf6\n" +
+                "Rg8 19.Rad1 Qxf3 20.Rxe7+ Nxe7 21.Qxd7+ Kxd7 22.Bf5+ Ke8\n" +
+                "23.Bd7+ Kf8 24.Bxe7# 1-0";
+        PgnReader reader = new PgnReader();
+        PgnPrinter printer = new PgnPrinter();
+        Game g = reader.readGame(s);
+        System.out.println(printer.printGame(g));
+
+    }
+
+    public void runPosHashTest() {
+
+        Board b1 = new Board("rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1");
+        Board b2 = new Board("rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1");
+        long key1 = b1.getPositionHash();
+        long key2 = b2.getPositionHash();
+        System.out.println("Posh Hash1: "+key1);
+        System.out.println("Posh Hash2: "+key2);
+
+        System.out.println("TEST: reading single PGN game, trying to find starting pos after 1d4 by pos hash");
+        String kingbase = "C:/Users/user/MyFiles/workspace/test_databases/KingBaseLite2016-03-E60-E99.pgn";
+        OptimizedRandomAccessFile raf = null;
+        PgnReader reader = new PgnReader();
+        if(reader.isIsoLatin1(kingbase)) {
+            reader.setEncodingIsoLatin1();
+        }
+        PgnPrinter printer = new PgnPrinter();
+        try {
+            raf = new OptimizedRandomAccessFile(kingbase, "r");
+            Game g = reader.readGame(raf);
+            //System.out.println("reading game ok");
+            boolean hasStartingPos = g.containsPosition(key1, 0 , 100);
+            System.out.println("found pos: "+hasStartingPos);
+            //String pgn = printer.printGame(g);
+            //System.out.println(pgn);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 

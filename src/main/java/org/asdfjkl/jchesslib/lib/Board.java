@@ -1,6 +1,24 @@
-package com.dkl;
+/* JerryFX - A Chess Graphical User Interface
+ * Copyright (C) 2020 Dominik Klein
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+package org.asdfjkl.jchesslib.lib;
+
 import java.awt.Point;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.lang.Math;
 
@@ -11,9 +29,9 @@ public class Board {
     public int halfmoveClock;
     public int fullmoveNumber;
 
-    private int board[];
-    private int oldBoard[];
-    private int pieceList[][][];
+    private int[] board;
+    private int[] oldBoard;
+    private int[][][] pieceList;
 
     private long zobristHash;
     private long positionHash;
@@ -56,10 +74,10 @@ public class Board {
         } else if (alpha == 'H') {
             return 7;
         }
-        throw new IllegalArgumentException("alpha to pos called with: " + Character.toString(alpha));
+        throw new IllegalArgumentException("alpha to pos called with: " + alpha);
     }
 
-    public Point internalToXY(int internalCoordinate) {
+    public static Point internalToXY(int internalCoordinate) {
         if(internalCoordinate < 21 || internalCoordinate > 98) {
             throw new IllegalArgumentException("internalToXY; arg out of range: "+internalCoordinate);
         }
@@ -68,7 +86,7 @@ public class Board {
         return new Point(col, row);
     }
 
-    public int xyToInternal(int x, int y) {
+    public static int xyToInternal(int x, int y) {
         if(x < 0 || x > 7 || y < 0 || y > 7) {
             throw new IllegalArgumentException("xyToInternal; arg out of range: "+ x + " " + y);
         } else {
@@ -310,7 +328,12 @@ public class Board {
             this.halfmoveClock = 0;
         }
         if(fenParts.length >= 6) {
-            this.fullmoveNumber = Integer.parseInt(fenParts[5]);
+            int fullMoveNumber = Integer.parseInt(fenParts[5]);
+            if(fullMoveNumber > 0) {
+                this.fullmoveNumber = fullMoveNumber;
+            } else {
+                this.fullmoveNumber = 1;
+            }
         } else {
             this.fullmoveNumber = 1;
         }
@@ -463,8 +486,8 @@ public class Board {
             fenString += " -";
         }
         // add halfmove clock and fullmove counter
-        fenString += " " + Integer.toString(this.halfmoveClock);
-        fenString += " " + Integer.toString(this.fullmoveNumber);
+        fenString += " " + this.halfmoveClock;
+        fenString += " " + this.fullmoveNumber;
 
         return fenString;
     }
@@ -472,7 +495,7 @@ public class Board {
     private void removeFromPieceList(boolean color, int piece_type, int idx) {
 
         int intColor = 0;
-        if(color == true) {
+        if(color) {
             intColor = 1;
         }
 
@@ -496,7 +519,7 @@ public class Board {
     private void addToPieceList(boolean color, int piece_type, int idx) {
 
         int intColor = 0;
-        if(color == true) {
+        if(color) {
             intColor = 1;
         }
 
@@ -1278,7 +1301,7 @@ public class Board {
     public boolean isLegalAndPromotes(Move m) {
         ArrayList<Move> pseudoLegals = this.pseudoLegalMoves(m.from, m.to, CONSTANTS.ANY_PIECE, true, this.turn);
         for(Move mi : pseudoLegals) {
-            if(mi.from == m.from && mi.to == m.to && mi.promotionPiece == m.promotionPiece && m.promotionPiece != 0) {
+            if(mi.from == m.from && mi.to == m.to && mi.promotionPiece != 0) {
                 if(isPseudoALegal(m)) {
                     return true;
                 }
@@ -1290,6 +1313,7 @@ public class Board {
     public ArrayList<Move> legalMoves() {
 
         ArrayList<Move> pseudoLegals = this.pseudoLegalMoves();
+        // System.out.println("pseudoLegalSize: "+pseudoLegals.size());
         ArrayList<Move> legals = new ArrayList<Move>();
         for(Move mi : pseudoLegals) {
             try {
@@ -1608,6 +1632,9 @@ public class Board {
         {
             int idx = this.xyToInternal(x,y);
             this.board[idx] = piece;
+            // we need to recalculate the piece list, if the board
+            // was manually modified
+            this.initPieceList();
         } else {
             throw new IllegalArgumentException("called setPieceAt with invalid paramters, (x,y,piece): "+x+","+y+","+piece);
         }
@@ -2093,9 +2120,7 @@ public class Board {
             s += "\n";
         }
         return s;
-
     }
-
 
     private void initPieceList() {
 

@@ -1,4 +1,22 @@
-package com.dkl;
+/* JerryFX - A Chess Graphical User Interface
+ * Copyright (C) 2020 Dominik Klein
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+package org.asdfjkl.jchesslib.lib;
 
 public class CONSTANTS {
 
@@ -33,7 +51,7 @@ public class CONSTANTS {
     public static final int BLACK_ANY_PIECE = 0x87;
 
 
-    public static final int EMPTY_POS[] =
+    public static final int[] EMPTY_POS =
               { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
                 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF,
@@ -49,7 +67,7 @@ public class CONSTANTS {
               };
 
     // initial board position
-    public static final int INIT_POS[] =
+    public static final int[] INIT_POS =
              {  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
                 0xFF, 0x04, 0x02, 0x03, 0x05, 0x06, 0x03, 0x02, 0x04, 0xFF,
@@ -154,7 +172,7 @@ public class CONSTANTS {
     // e.g. distance one, i.e. index 1 (=left, up, down, right square) has
     // value 0x1C = MSB 00011100 LSB, i.e. king, queen, rook can
     // potentially attack
-    public static int ATTACK_TABLE[] =
+    public static final int[] ATTACK_TABLE =
              {  0x00, 0x1C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x0C, 0x01, 0x1a,
                 0x1C, 0x1A, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x01,
                 0x0C, 0x01, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00,
@@ -170,7 +188,7 @@ public class CONSTANTS {
     // [piece_type[1] ... [piece_type][4] resp.
     // [piece_type[1] ... [piece_type][8] contain
     // DPOINT table
-    public static int DIR_TABLE[][] =
+    public static final int[][] DIR_TABLE =
             {
                 { 4, -10, -20, -11, -9 ,   0,   0,   0,   0 }, // max 4 black pawn directions, rest 0's
                 { 4, +10, +20, +11, +9 ,   0,   0,   0,   0 }, // max 4 white pawn directions, rest 0's
@@ -193,13 +211,13 @@ public class CONSTANTS {
 
 
     // players
-    public static boolean WHITE = false;
-    public static int IWHITE = 0;
-    public static boolean BLACK = true;
-    public static int IBLACK = 1;
+    public static final boolean WHITE = false;
+    public static final int IWHITE = 0;
+    public static final boolean BLACK = true;
+    public static final int IBLACK = 1;
 
     // for zobrist hashing w/ and polyglot opening books
-    public static final long POLYGLOT_RANDOM_64[] = {
+    public static final long[] POLYGLOT_RANDOM_64 = {
                 0x9D39247E33776D41L, 0x2AF7398005AAA5C7L, 0x44DB015024623547L,
                 0x9C15F73E62A76AE2L, 0x75834465489C0C89L, 0x3290AC3A203001BFL,
                 0x0FBBAD1F61042279L, 0xE83A908FF2FB60CAL, 0x0D7E765D58755C10L,
@@ -467,60 +485,70 @@ public class CONSTANTS {
     public static final int RANDOM_EN_PASSENT = 772;
     public static final int RANDOM_TURN = 780;
 
-    public static int RES_UNDEF = 0;
-    public static int RES_WHITE_WINS = 1;
-    public static int RES_BLACK_WINS = 2;
-    public static int RES_DRAW = 3;
-    public static int RES_ANY = 4;
+    public static final int RES_UNDEF = 0;
+    public static final int RES_WHITE_WINS = 1;
+    public static final int RES_BLACK_WINS = 2;
+    public static final int RES_DRAW = 3;
+    public static final int RES_ANY = 4;
 
-    public static int NAG_NULL = 0;
-    public static int NAG_GOOD_MOVE = 1;
+    public static final int NAG_NULL = 0;
+    public static final int NAG_GOOD_MOVE = 1;
     //A good move. Can also be indicated by ``!`` in PGN notation."""
-    public static int NAG_MISTAKE = 2;
+    public static final int NAG_MISTAKE = 2;
     //A mistake. Can also be indicated by ``?`` in PGN notation."""
-    public static int NAG_BRILLIANT_MOVE = 3;
+    public static final int NAG_BRILLIANT_MOVE = 3;
     //A brilliant move. Can also be indicated by ``!!`` in PGN notation."""
-    public static int NAG_BLUNDER = 4;
+    public static final int NAG_BLUNDER = 4;
     //A blunder. Can also be indicated by ``??`` in PGN notation."""
-    public static int NAG_SPECULATIVE_MOVE = 5;
+    public static final int NAG_SPECULATIVE_MOVE = 5;
     //A speculative move. Can also be indicated by ``!?`` in PGN notation."""
-    public static int NAG_DUBIOUS_MOVE = 6;
+    public static final int NAG_DUBIOUS_MOVE = 6;
     //A dubious move. Can also be indicated by ``?!`` in PGN notation."""
-    public static int NAG_FORCED_MOVE = 7;
-    public static int NAG_DRAWISH_POSITION = 10;
-    public static int NAG_UNCLEAR_POSITION = 13;
-    public static int NAG_WHITE_MODERATE_ADVANTAGE = 16;
-    public static int NAG_BLACK_MODERATE_ADVANTAGE = 17;
-    public static int NAG_WHITE_DECISIVE_ADVANTAGE = 18;
-    public static int NAG_BLACK_DECISIVE_ADVANTAGE = 19;
-    public static int NAG_WHITE_ZUGZWANG = 22;
-    public static int NAG_BLACK_ZUGZWANG = 23;
-    public static int NAG_WHITE_HAS_ATTACK = 40;
-    public static int NAG_BLACK_HAS_ATTACK = 41;
-    public static int NAG_WHITE_MODERATE_COUNTERPLAY = 132;
-    public static int NAG_BLACK_MODERATE_COUNTERPLAY = 133;
+    public static final int NAG_FORCED_MOVE = 7;
+    public static final int NAG_DRAWISH_POSITION = 10;
+    public static final int NAG_UNCLEAR_POSITION = 13;
+    public static final int NAG_WHITE_SLIGHT_ADVANTAGE = 14;
+    public static final int NAG_BLACK_SLIGHT_ADVANTAGE = 15;
+    public static final int NAG_WHITE_MODERATE_ADVANTAGE = 16;
+    public static final int NAG_BLACK_MODERATE_ADVANTAGE = 17;
+    public static final int NAG_WHITE_DECISIVE_ADVANTAGE = 18;
+    public static final int NAG_BLACK_DECISIVE_ADVANTAGE = 19;
+    public static final int NAG_WHITE_ZUGZWANG = 22;
+    public static final int NAG_BLACK_ZUGZWANG = 23;
+    public static final int NAG_WHITE_HAS_INITIATIVE = 36;
+    public static final int NAG_BLACK_HAS_INITIATIVE = 37;
+    public static final int NAG_WHITE_HAS_ATTACK = 40;
+    public static final int NAG_BLACK_HAS_ATTACK = 41;
+    public static final int NAG_WHITE_HAS_COMPENSATION = 46;
+    public static final int NAG_BLACK_HAS_COMPENSATION = 47;
+    public static final int NAG_WHITE_MODERATE_COUNTERPLAY = 132;
+    public static final int NAG_BLACK_MODERATE_COUNTERPLAY = 133;
+    public static final int NAG_WHITE_TIME_TROUBLE = 138;
+    public static final int NAG_BLACK_TIME_TROUBLE = 139;
+    public static final int NAG_WITH_THE_IDEA_OF = 140;
+    public static final int NAG_NOVELTY = 146;
 
 
     // tokens for move parsing
-    public static int TKN_ERROR = -1;
-    public static int TKN_PAWN_MOVE = 1;
-    public static int TKN_CASTLE = 2;
-    public static int TKN_ROOK_MOVE = 3;
-    public static int TKN_KNIGHT_MOVE = 4;
-    public static int TKN_BISHOP_MOVE = 5;
-    public static int TKN_QUEEN_MOVE = 6;
-    public static int TKN_KING_MOVE = 7;
-    public static int TKN_OPEN_VARIATION = 8;
-    public static int TKN_CLOSE_VARIATION = 9;
-    public static int TKN_NAG = 10;
-    public static int TKN_OPEN_COMMENT = 11;
-    public static int TKN_RES_WHITE_WIN = 12;
-    public static int TKN_RES_BLACK_WIN = 13;
-    public static int TKN_RES_DRAW = 14;
-    public static int TKN_RES_UNDEFINED = 15;
-    public static int TKN_CHECK = 16;
-    public static int TKN_EOL = 17;
-    public static int TKN_NULL_MOVE = 18;
+    public static final int TKN_ERROR = -1;
+    public static final int TKN_PAWN_MOVE = 1;
+    public static final int TKN_CASTLE = 2;
+    public static final int TKN_ROOK_MOVE = 3;
+    public static final int TKN_KNIGHT_MOVE = 4;
+    public static final int TKN_BISHOP_MOVE = 5;
+    public static final int TKN_QUEEN_MOVE = 6;
+    public static final int TKN_KING_MOVE = 7;
+    public static final int TKN_OPEN_VARIATION = 8;
+    public static final int TKN_CLOSE_VARIATION = 9;
+    public static final int TKN_NAG = 10;
+    public static final int TKN_OPEN_COMMENT = 11;
+    public static final int TKN_RES_WHITE_WIN = 12;
+    public static final int TKN_RES_BLACK_WIN = 13;
+    public static final int TKN_RES_DRAW = 14;
+    public static final int TKN_RES_UNDEFINED = 15;
+    public static final int TKN_CHECK = 16;
+    public static final int TKN_EOL = 17;
+    public static final int TKN_NULL_MOVE = 18;
 
 
 }

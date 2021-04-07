@@ -1,12 +1,27 @@
-package com.dkl;
+/* JerryFX - A Chess Graphical User Interface
+ * Copyright (C) 2020 Dominik Klein
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+package org.asdfjkl.jchesslib.lib;
 
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
-
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
@@ -16,7 +31,7 @@ public class PgnReader {
     GameNode currentNode = null;
     String currentLine;  // current line
     int currentIdx = 0; // current index
-    Stack<GameNode> gameStack;
+    final Stack<GameNode> gameStack;
     String encoding;
 
     public PgnReader() {
@@ -32,6 +47,8 @@ public class PgnReader {
         this.encoding = "ISO-8859-1";
     }
 
+    public String getEncoding() { return encoding; }
+
     public boolean isIsoLatin1(String filename) {
 
         boolean isLatin1 = false;
@@ -46,7 +63,7 @@ public class PgnReader {
             int i=0;
             while((line = raf.readLine()) != null && i < 1000) {
                 if(i == 0 || (line.contains("[") || line.contains("{") || line.contains("}"))) {
-                    byte[] lineBytes = line.getBytes("ISO-8859-1");
+                    byte[] lineBytes = line.getBytes(StandardCharsets.ISO_8859_1);
                     for (int j = 0; j < lineBytes.length; j++) {
                         bytesRead.add(lineBytes[j]);
                     }
@@ -120,8 +137,7 @@ public class PgnReader {
     */
 
 
-
-    ArrayList<Long> scanPgn(String filename) {
+    public ArrayList<Long> scanPgn(String filename) {
 
         ArrayList<Long> offsets = new ArrayList<>();
 
@@ -225,7 +241,7 @@ public class PgnReader {
                         int secondQuote = currentLine.indexOf('"', firstQuote + 1);
                         String tag = currentLine.substring(1, spaceOffset);
                         String value = currentLine.substring(firstQuote + 1, secondQuote);
-                        header.put(tag, new String(value.getBytes("ISO-8859-1"), encoding));
+                        header.put(tag, new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
                     }
                 } else {
                     if (foundHeader) {
@@ -277,29 +293,21 @@ public class PgnReader {
 
     private void parsePawnMove() {
 
-        //System.out.println("PAWN MOVE "+currentLine.substring(currentIdx, currentIdx+3));
         int col = Board.alphaToPos(Character.toUpperCase(currentLine.charAt(currentIdx)));
-        //System.out.println(Character.toUpperCase(currentLine.charAt(currentIdx)));
-        //System.out.println("columN: "+col);
         Board board = currentNode.getBoard();
         if(currentIdx +1 < currentLine.length()) {
             if(currentLine.charAt(currentIdx+1) == 'x') {
-                //System.out.println("11111");
                 // after x, next one must be letter denoting column
                 // and then digit representing row, like exd4 (white)
-                // then parse d, 4, and check wether there is a pawn
+                // then parse d, 4, and check whether there is a pawn
                 // on e(4-1) = e3
                 if(currentIdx+3 < currentLine.length()) {
-                    //System.out.println("22222222");
                     if(this.isCol(currentLine.charAt(currentIdx+2))
                             && this.isRow(currentLine.charAt(currentIdx+3)))
                     {
                         int col_to = Board.alphaToPos(Character.toUpperCase(currentLine.charAt(currentIdx+2)));
                         int row_to = Character.getNumericValue(currentLine.charAt(currentIdx+3)) - 1;
                         int row_from = -1;
-                        //System.out.println("6666666666");
-                        //System.out.println("colto: "+col_to);
-                        //System.out.println("rowto: "+row_to);
                         if(board.turn == CONSTANTS.WHITE && row_to - 1 >= 0
                                 && board.isPieceAt(col, row_to - 1)
                             && board.getPieceAt(col, row_to - 1) == CONSTANTS.WHITE_PAWN) {
@@ -310,8 +318,7 @@ public class PgnReader {
                             row_from = row_to + 1;
                         }
                         if(row_from >= 0 && row_from <= 7) {
-                            //System.out.println("555555");
-                            // check wether this is a promotion, i.e. exd8=Q
+                            // check whether this is a promotion, i.e. exd8=Q
                             if(currentIdx+5 < currentLine.length() && currentLine.charAt(currentIdx+4) == '=' &&
                                     (currentLine.charAt(currentIdx+5) == 'R' ||
                                     currentLine.charAt(currentIdx+5) == 'B' ||
@@ -322,9 +329,7 @@ public class PgnReader {
                                 currentIdx += 6;
                                 return;
                             } else { // just a normal move, like exd4
-                                //System.out.println("333333");
                                 Move m = new Move(col, row_from, col_to, row_to);
-                                //System.out.println("calculated pawn: "+m.getUci());
                                 this.addMove(m);
                                 currentIdx += 4;
                                 return;
@@ -344,7 +349,6 @@ public class PgnReader {
             } else { // only other case: must be a number
                 if(this.isRow(currentLine.charAt(currentIdx+1))) {
                     int row = Character.getNumericValue(currentLine.charAt(currentIdx+1)) - 1;
-                    //System.out.println("ROW   "+row);
                     int from_row = -1;
                     if(board.turn == CONSTANTS.WHITE) {
                         for(int row_i = row - 1;row_i>= 1;row_i--) {
@@ -361,16 +365,14 @@ public class PgnReader {
                             }
                         }
                     }
-                    //System.out.println("FROM ROW "+from_row);
                     if(from_row >= 0) { // means we found a from square
-                        // check wether this is a promotion
+                        // check whether this is a promotion
                         if(currentIdx+3 < currentLine.length() && currentLine.charAt(currentIdx+2) == '=' &&
                                 (currentLine.charAt(currentIdx+3) == 'R' ||
                                 currentLine.charAt(currentIdx+3) == 'B' ||
                                 currentLine.charAt(currentIdx+3) == 'N' ||
                                 currentLine.charAt(currentIdx+3) == 'Q')) {
                             Move m = new Move(col, from_row, col, row, currentLine.charAt(currentIdx+3));
-                            //System.out.println("MOVE UCI "+m.getUci());
                             this.addMove(m);
                             currentIdx += 4;
                             return;
@@ -461,10 +463,6 @@ public class PgnReader {
     }
 
     private void parsePieceMove(int pieceType) {
-        //System.out.println("parse piece move");
-        //if(currentIdx + 4 < currentLine.length()) {
-        //    System.out.println(currentLine.substring(currentIdx, currentIdx+4));
-        //}
 
         // we have a piece move like "Qxe4" where index points to Q
         // First move idx after piece symbol, i.e. to ">x<e4"
@@ -474,20 +472,13 @@ public class PgnReader {
         }
         if(currentIdx < currentLine.length()) {
             if(this.isCol(currentLine.charAt(currentIdx))) {
-                //System.out.println("is col true");
                 //Qe? or Qxe?, now either digit must follow (Qe4 / Qxe4)
-                //or we have a disambiguition (Qee5, Qexe5)
-                //System.out.println("111");
+                //or we have a disambiguation (Qee5, Qexe5)
                 if(currentIdx+1 < currentLine.length()) {
-                    //System.out.println("2222222222");
-                    //System.out.println(currentLine.charAt(currentIdx+1));
                     if(this.isRow(currentLine.charAt(currentIdx+1))) {
-                        //System.out.println("222");
-                        //System.out.println(currentLine.substring(currentIdx));
                         int to_col = Board.alphaToPos(Character.toUpperCase(currentLine.charAt(currentIdx)));
                         int to_row = Character.getNumericValue(currentLine.charAt(currentIdx+1)) - 1;
                         currentIdx+=2;
-                        //System.out.println("33333333333");
                         // standard move, i.e. Qe4
                         try {
                             createPieceMove(pieceType, to_col, to_row);
@@ -498,21 +489,16 @@ public class PgnReader {
                         // fix: skip x if we have Qexe5
                         int skipForTake = 0;
                         if(currentLine.charAt(currentIdx+1) == 'x' && currentIdx + 2 < currentLine.length()) {
-                            //System.out.println("fix");
                             skipForTake = 1;
                             currentIdx+=1;
                         }
                         // fix end
                         if(this.isCol(currentLine.charAt(currentIdx+1))) {
-                            //System.out.println("44444444444"+currentLine.charAt(currentIdx+1));
-                            // we have a disambiguition, that should resolved by
+                            // we have a disambiguation, that should resolved by
                             // the column denoted in the san, here in @line[idx]
                             int to_col = Board.alphaToPos(Character.toUpperCase(currentLine.charAt(currentIdx+1)));
                             if(currentIdx+2 < currentLine.length() && this.isRow(currentLine.charAt(currentIdx+2))) {
-                                //System.out.println(currentLine.charAt(currentIdx+2));
                                 int to_row = Character.getNumericValue(currentLine.charAt(currentIdx+2)) - 1;
-                                //System.out.println(to_col);
-                                //System.out.println(to_row);
                                 // move w/ disambig on col, i.e. Qee4
                                 // provide line[idx] to cratePieceMove to resolve disamb.
                                 currentIdx+=3;
@@ -535,13 +521,7 @@ public class PgnReader {
                     return;
                 }
             } else {
-                //System.out.println("checking else");
-                //if(currentIdx+1 < currentLine.length()) {
-                //    System.out.println(currentLine.charAt(currentIdx+1));
-                //    System.out.println(this.isRow(currentLine.charAt(currentIdx)));
-                //}
                 if(currentIdx+1 < currentLine.length() && this.isRow(currentLine.charAt(currentIdx))) {
-                    //System.out.println("is col!");
                     // we have a move with disamb, e.g. Q4xe5 or Q4e5
                     int from_row = Character.getNumericValue(currentLine.charAt(currentIdx))- 1;
                     if(currentLine.charAt(currentIdx+1) == 'x') {
@@ -610,11 +590,102 @@ public class PgnReader {
         return;
     }
 
+    private String nagToString(int nag) {
+
+        String token = "";
+        switch(nag) {
+            case CONSTANTS.NAG_BLUNDER:
+                token = "??";
+                break;
+            case CONSTANTS.NAG_MISTAKE:
+                token = "?";
+                break;
+            case CONSTANTS.NAG_DUBIOUS_MOVE:
+                token = "?!";
+                break;
+            case CONSTANTS.NAG_SPECULATIVE_MOVE:
+                token = "!?";
+                break;
+            case CONSTANTS.NAG_GOOD_MOVE:
+                token = "!";
+                break;
+            case CONSTANTS.NAG_BRILLIANT_MOVE:
+                token = "!!";
+                break;
+            case CONSTANTS.NAG_FORCED_MOVE:
+                token = "□";
+                break;
+            case CONSTANTS.NAG_WITH_THE_IDEA_OF:
+                token = "Δ";
+                break;
+            case CONSTANTS.NAG_NOVELTY:
+                token = "N";
+                break;
+            case CONSTANTS.NAG_WHITE_SLIGHT_ADVANTAGE:
+                token = "⩲";
+                break;
+            case CONSTANTS.NAG_BLACK_SLIGHT_ADVANTAGE:
+                token = "⩱";
+                break;
+            case CONSTANTS.NAG_WHITE_MODERATE_ADVANTAGE:
+                token = "±";
+                break;
+            case CONSTANTS.NAG_BLACK_MODERATE_ADVANTAGE:
+                token = "∓";
+                break;
+            case CONSTANTS.NAG_WHITE_DECISIVE_ADVANTAGE:
+                token = "+−";
+                break;
+            case CONSTANTS.NAG_BLACK_DECISIVE_ADVANTAGE:
+                token = "−+";
+                break;
+            case CONSTANTS.NAG_UNCLEAR_POSITION:
+                token = "∞";
+                break;
+            case CONSTANTS.NAG_WHITE_HAS_COMPENSATION:
+                token = "=∞";
+                break;
+            case CONSTANTS.NAG_BLACK_HAS_COMPENSATION:
+                token = "=∞";
+                break;
+            case CONSTANTS.NAG_WHITE_HAS_INITIATIVE:
+                token = "↑";
+                break;
+            case CONSTANTS.NAG_BLACK_HAS_INITIATIVE:
+                token = "↑";
+                break;
+            case CONSTANTS.NAG_WHITE_HAS_ATTACK:
+                token = "→";
+                break;
+            case CONSTANTS.NAG_BLACK_HAS_ATTACK:
+                token = "→";
+                break;
+            case CONSTANTS.NAG_WHITE_MODERATE_COUNTERPLAY:
+                token = "⇄";
+                break;
+            case CONSTANTS.NAG_BLACK_MODERATE_COUNTERPLAY:
+                token = "⇄";
+                break;
+            case CONSTANTS.NAG_WHITE_TIME_TROUBLE:
+                token = "⊕";
+                break;
+            case CONSTANTS.NAG_BLACK_TIME_TROUBLE:
+                token = "⊕";
+                break;
+            case CONSTANTS.NAG_WHITE_ZUGZWANG:
+                token = "⊙";
+                break;
+            case CONSTANTS.NAG_BLACK_ZUGZWANG:
+                token = "⊙";
+                break;
+        }
+        return token;
+    }
+
 
     private void parseNAG() {
 
         int lineSize = currentLine.length();
-        //System.out.println("parse NAG: " + currentLine.substring(currentIdx, currentIdx+2));
 
         if(currentLine.charAt(currentIdx) == '$') {
             int idx_end = currentIdx;
@@ -623,16 +694,18 @@ public class PgnReader {
                     || (currentLine.charAt(idx_end) >= '0' && currentLine.charAt(idx_end) <= '9'))) {
                 idx_end++;
             }
-            //System.out.println(currentIdx);
-            //System.out.println(currentLine.length());
-            //System.out.println(idx_end);
-            //System.out.println(currentLine.substring(currentIdx, idx_end));
             if(idx_end+1 > currentIdx) {
                 boolean ok;
                 try {
                     int nr = Integer.parseInt(currentLine.substring(currentIdx + 1, idx_end));
-                    //System.out.println(nr);
-                    currentNode.addNag(nr);
+                    String nagText = nagToString(nr);
+                    if(!nagText.isEmpty()) {
+                        if(nr >= 1 && nr <= 9) {
+                            currentNode.addMoveAnnotation(nagText);
+                        } else {
+                            currentNode.addPositionAnnotation(nagText);
+                        }
+                    }
                     currentIdx = idx_end;
                 } catch(NumberFormatException e) {
                     currentIdx += 1;
@@ -644,35 +717,35 @@ public class PgnReader {
         }
         //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,currentIdx+2).equals("??")) {
         if(currentLine.startsWith("??", currentIdx)) {
-            currentNode.addNag(CONSTANTS.NAG_BLUNDER);
+            currentNode.addMoveAnnotation("??");
             currentIdx += 3;
             return;
         }
         //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("!!")) {
         if(currentLine.startsWith("!!", currentIdx)) {
-            currentNode.addNag(CONSTANTS.NAG_BRILLIANT_MOVE);
+            currentNode.addMoveAnnotation("!!");
             currentIdx += 3;
             return;
         }
         //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("!?")) {
         if(currentLine.startsWith("!?", currentIdx)) {
-            currentNode.addNag(CONSTANTS.NAG_SPECULATIVE_MOVE);
+            currentNode.addMoveAnnotation("!?");
             currentIdx += 3;
             return;
         }
         //if(currentIdx+1 < lineSize && currentLine.substring(currentIdx,2).equals("?!")) {
         if(currentLine.startsWith("?!", currentIdx)) {
-            currentNode.addNag(CONSTANTS.NAG_DUBIOUS_MOVE);
+            currentNode.addMoveAnnotation("?!");
             currentIdx += 3;
             return;
         }
         if(currentLine.charAt(currentIdx) == '?') {
-            currentNode.addNag(CONSTANTS.NAG_MISTAKE);
+            currentNode.addMoveAnnotation("?");
             currentIdx += 2;
             return;
         }
         if(currentLine.charAt(currentIdx) == '!') {
-            currentNode.addNag(CONSTANTS.NAG_GOOD_MOVE);
+            currentNode.addMoveAnnotation("!");
             currentIdx += 2;
             return;
         }
@@ -749,7 +822,6 @@ public class PgnReader {
                 return CONSTANTS.TKN_CLOSE_VARIATION;
             }
             if(ci == '$' || ci == '!' || ci == '?') {
-                //System.out.println("found NAG");
                 return CONSTANTS.TKN_NAG;
             }
             if(ci == '{') {
@@ -804,13 +876,12 @@ public class PgnReader {
                             if (tag.equals("FEN")) {
                                 startingFen = value;
                             } else {
-                                g.setHeader(tag, new String(value.getBytes("ISO-8859-1"), encoding));
+                                g.setHeader(tag, new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
                             }
                         }
                     }
                     continue;
                 } else {
-                    //System.out.println("break: "+currentLine);
                     break; // finished reading header
                 }
             }
@@ -820,7 +891,6 @@ public class PgnReader {
         }
         // now the actual game should start.
         // try to set the starting fen, if it exists
-        //System.out.println("starting fen: "+startingFen);
         if (!startingFen.isEmpty()) {
             try {
                 Board boardFen = new Board(startingFen);
@@ -840,7 +910,6 @@ public class PgnReader {
             try {
                 while (true) {
                     currentLine = raf.readLine();
-                    //System.out.println(currentLine);
                     if (currentLine == null) { //reached eof
                         return g;
                     }
@@ -857,8 +926,6 @@ public class PgnReader {
         }
 
         boolean firstLine = true;
-
-        //System.out.println("Starting with: "+currentLine);
 
         try {
             while (true) {
@@ -879,11 +946,6 @@ public class PgnReader {
 
                 currentIdx = 0;
                 while (currentIdx < currentLine.length()) {
-                    //if(currentIdx + 3 < currentLine.length()) {
-                    //    System.out.println("TOKEN: " + currentLine.substring(currentIdx, currentIdx+4));
-                       //System.out.println("current node is null: " + (currentNode == null));
-                        //System.out.println(currentNode.getBoard().toString());
-                    //}
                     int tkn = getNetxtToken();
                     if (tkn == CONSTANTS.TKN_EOL) {
                         break;
@@ -909,12 +971,9 @@ public class PgnReader {
                         currentIdx += 8;
                     }
                     if (tkn == CONSTANTS.TKN_PAWN_MOVE) {
-                        //System.out.println("pawn move");
                         parsePawnMove();
                     }
                     if (tkn == CONSTANTS.TKN_CASTLE) {
-                        //System.out.println("token castle");
-                        //System.out.println("check: "+currentLine.substring(currentIdx, currentIdx+4));
                         parseCastleMove();
                     }
                     if (tkn == CONSTANTS.TKN_ROOK_MOVE) {
@@ -927,7 +986,6 @@ public class PgnReader {
                         parsePieceMove(CONSTANTS.BISHOP);
                     }
                     if (tkn == CONSTANTS.TKN_QUEEN_MOVE) {
-                        //System.out.println("Queen move");
                         parsePieceMove(CONSTANTS.QUEEN);
                     }
                     if (tkn == CONSTANTS.TKN_KING_MOVE) {
@@ -965,12 +1023,10 @@ public class PgnReader {
                     if (tkn == CONSTANTS.TKN_OPEN_COMMENT) {
                         //String rest_of_line = currentLine.substring(currentIdx + 1, currentLine.length() - (currentIdx + 1));
                         String rest_of_line = currentLine.substring(currentIdx + 1, currentLine.length());
-                        //System.out.println(rest_of_line);
                         int end = rest_of_line.indexOf("}");
-                        //System.out.println(end);
                         if (end >= 0) {
-                            String comment_line = rest_of_line.substring(0, end+1);
-                            currentNode.setComment(new String(comment_line.getBytes("ISO-8859-1"), encoding));
+                            String comment_line = rest_of_line.substring(0, end);
+                            currentNode.setComment(new String(comment_line.getBytes(StandardCharsets.ISO_8859_1), encoding));
                             currentIdx = currentIdx + end + 1;
                         } else {
                             // get comment over multiple lines
@@ -991,8 +1047,6 @@ public class PgnReader {
                                     end_index = -1;
                                     break;
                                 }
-                                //System.out.println("current line");
-                                //System.out.println(currentLine);
                                 linesRead += 1;
                                 if (currentLine.contains("}")) {
                                     end_index = currentLine.indexOf("}");
@@ -1002,13 +1056,11 @@ public class PgnReader {
                                 }
                             }
                             if (end_index >= 0) {
-                                //System.out.println("current line");
-                                //System.out.println(currentLine);
                                 comment_lines.append(currentLine, 0, end_index);
                                 comment_lines.append("\n");
                                 currentIdx = end_index + 1;
                             }
-                            currentNode.setComment(new String(comment_lines.toString().getBytes("ISO-8859-1"), encoding));
+                            currentNode.setComment(new String(comment_lines.toString().getBytes(StandardCharsets.ISO_8859_1), encoding));
                         }
                     }
                 }
@@ -1021,6 +1073,252 @@ public class PgnReader {
 
         return g;
     }
+
+
+    public Game readGame(String gameString) {
+
+        String[] lines = gameString.split("\n");
+
+        currentLine = "";
+        currentIdx = 0;
+
+        String startingFen = "";
+
+        Game g = new Game();
+
+        gameStack.clear();
+        gameStack.push(g.getRootNode());
+        currentNode = g.getRootNode();
+        Board rootBoard = new Board(true);
+        currentNode.setBoard(rootBoard);
+
+        currentLine = null;
+
+        int lineIndex = 0;
+
+            while (lineIndex < lines.length) {
+                currentLine = lines[lineIndex];
+
+                if (currentLine.startsWith("%") || currentLine.isEmpty()) {
+                    lineIndex += 1;
+                    continue;
+                }
+
+                if (currentLine.startsWith("[")) {
+                    if (currentLine.length() > 4) {
+                        int spaceOffset = currentLine.indexOf(' ');
+                        int firstQuote = currentLine.indexOf('"');
+                        int secondQuote = currentLine.indexOf('"', firstQuote + 1);
+                        if(spaceOffset > 1 && firstQuote >= 0 && secondQuote >= 0 && secondQuote > (firstQuote+1)) {
+                            String tag = currentLine.substring(1, spaceOffset);
+                            String value = currentLine.substring(firstQuote + 1, secondQuote);
+                            if (tag.equals("FEN")) {
+                                startingFen = value;
+                            } else {
+                                try {
+                                    g.setHeader(tag, new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
+                                } catch(UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                    lineIndex += 1;
+                    continue;
+                } else {
+                    break; // finished reading header
+                }
+            }
+
+
+        // now the actual game should start.
+        // try to set the starting fen, if it exists
+        if (!startingFen.isEmpty()) {
+            try {
+                Board boardFen = new Board(startingFen);
+                if (!boardFen.isConsistent()) {
+                    return g;
+                } else {
+                    currentNode.setBoard(boardFen);
+                }
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // we should now have a header, seek first non-empty line
+        // if we already reached it, just skip this part
+        if(currentLine.trim().isEmpty()) {
+            while (lineIndex < lines.length - 1) {
+                lineIndex += 1;
+                currentLine = lines[lineIndex];
+                if (currentLine.trim().isEmpty()) {
+                    continue;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if(lineIndex >= lines.length) {
+            return g;
+        }
+
+        boolean firstLine = true;
+
+        try {
+            while (true) {
+                // if we are at the first line after skipping
+                // all the empty ones, don't read another line
+                // otherwise, call readLine
+                if (!firstLine) {
+                    lineIndex += 1;
+                } else {
+                    firstLine = false;
+                }
+                if (lineIndex >= lines.length) {
+                    return g;
+                }
+                currentLine = lines[lineIndex];
+                if(currentLine.isEmpty()) {
+                    return g;
+                }
+                if (currentLine.startsWith("%")) {
+                    lineIndex += 1;
+                    continue;
+                }
+
+                currentIdx = 0;
+                while (currentIdx < currentLine.length()) {
+                    int tkn = getNetxtToken();
+                    if (tkn == CONSTANTS.TKN_EOL) {
+                        break;
+                    }
+                    if (tkn == CONSTANTS.TKN_RES_WHITE_WIN) {
+                        // 1-0
+                        g.setResult(CONSTANTS.RES_WHITE_WINS);
+                        currentIdx += 4;
+                    }
+                    if (tkn == CONSTANTS.TKN_RES_BLACK_WIN) {
+                        // 0-1
+                        g.setResult(CONSTANTS.RES_BLACK_WINS);
+                        currentIdx += 4;
+                    }
+                    if (tkn == CONSTANTS.TKN_RES_UNDEFINED) {
+                        // *
+                        g.setResult(CONSTANTS.RES_UNDEF);
+                        currentIdx += 2;
+                    }
+                    if (tkn == CONSTANTS.TKN_RES_DRAW) {
+                        // 1/2-1/2
+                        g.setResult(CONSTANTS.RES_DRAW);
+                        currentIdx += 8;
+                    }
+                    if (tkn == CONSTANTS.TKN_PAWN_MOVE) {
+                        parsePawnMove();
+                    }
+                    if (tkn == CONSTANTS.TKN_CASTLE) {
+                        parseCastleMove();
+                    }
+                    if (tkn == CONSTANTS.TKN_ROOK_MOVE) {
+                        parsePieceMove(CONSTANTS.ROOK);
+                    }
+                    if (tkn == CONSTANTS.TKN_KNIGHT_MOVE) {
+                        parsePieceMove(CONSTANTS.KNIGHT);
+                    }
+                    if (tkn == CONSTANTS.TKN_BISHOP_MOVE) {
+                        parsePieceMove(CONSTANTS.BISHOP);
+                    }
+                    if (tkn == CONSTANTS.TKN_QUEEN_MOVE) {
+                        parsePieceMove(CONSTANTS.QUEEN);
+                    }
+                    if (tkn == CONSTANTS.TKN_KING_MOVE) {
+                        parsePieceMove(CONSTANTS.KING);
+                    }
+                    if (tkn == CONSTANTS.TKN_CHECK) {
+                        currentIdx += 1;
+                    }
+                    if (tkn == CONSTANTS.TKN_NULL_MOVE) {
+                        Move m = new Move();
+                        m.isNullMove = true;
+                        addMove(m);
+                        currentIdx += 2;
+                    }
+                    if (tkn == CONSTANTS.TKN_OPEN_VARIATION) {
+                        // put current node on stack, so that we don't forget it.
+                        // however if we are at the root node, something
+                        // is wrong in the PGN. Silently ignore "(" then
+                        if(currentNode != g.getRootNode()) {
+                            gameStack.push(currentNode);
+                            currentNode = currentNode.getParent();
+                        }
+                        currentIdx += 1;
+                    }
+                    if (tkn == CONSTANTS.TKN_CLOSE_VARIATION) {
+                        // pop from stack. but always leave root
+                        if (gameStack.size() > 1) {
+                            currentNode = gameStack.pop();
+                        }
+                        currentIdx += 1;
+                    }
+                    if (tkn == CONSTANTS.TKN_NAG) {
+                        parseNAG();
+                    }
+                    if (tkn == CONSTANTS.TKN_OPEN_COMMENT) {
+                        //String rest_of_line = currentLine.substring(currentIdx + 1, currentLine.length() - (currentIdx + 1));
+                        String rest_of_line = currentLine.substring(currentIdx + 1, currentLine.length());
+                        int end = rest_of_line.indexOf("}");
+                        if (end >= 0) {
+                            String comment_line = rest_of_line.substring(0, end+1);
+                            currentNode.setComment(new String(comment_line.getBytes(StandardCharsets.ISO_8859_1), encoding));
+                            currentIdx = currentIdx + end + 1;
+                        } else {
+                            // get comment over multiple lines
+                            StringBuilder comment_lines = new StringBuilder();
+                            //String comment_line = currentLine.substring(currentIdx + 1, currentLine.length() - (currentIdx + 1));
+                            String comment_line = currentLine.substring(currentIdx + 1);
+                            comment_lines.append(comment_line).append("\n");
+                            // we already have the comment part of the current line,
+                            // so read-in the next line, and then loop until we find
+                            // the end marker "}"
+                            //currentLine = raf.readLine();
+                            int linesRead = 0;
+                            int end_index = -1;
+                            while (linesRead < 500) { // what if we never find } ??? -> stop after 500 lines
+                                lineIndex += 1;
+                                if(lineIndex >= lines.length) {
+                                    currentLine = "";
+                                    end_index = -1;
+                                    break;
+                                }
+                                currentLine = lines[lineIndex];
+                                linesRead += 1;
+                                if (currentLine.contains("}")) {
+                                    end_index = currentLine.indexOf("}");
+                                    break;
+                                } else {
+                                    comment_lines.append(currentLine).append("\n");
+                                }
+                            }
+                            if (end_index >= 0) {
+                                comment_lines.append(currentLine, 0, end_index);
+                                comment_lines.append("\n");
+                                currentIdx = end_index + 1;
+                            }
+                            currentNode.setComment(new String(comment_lines.toString().getBytes(StandardCharsets.ISO_8859_1), encoding));
+                        }
+                    }
+                }
+
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return g;
+    }
+
 
 }
 

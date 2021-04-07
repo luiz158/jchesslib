@@ -1,4 +1,22 @@
-package com.dkl;
+/* JerryFX - A Chess Graphical User Interface
+ * Copyright (C) 2020 Dominik Klein
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+package org.asdfjkl.jchesslib.lib;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,16 +27,44 @@ public class Game {
     private GameNode current = null;
     private int result;
     private boolean treeWasChanged;
-    private boolean wasEcoClassified;
-    private HashMap<String, String> pgnHeaders;
+    private HashMap<String, String> infoStrings;
+    private HashMap<String, Integer> infoNumbers;
 
     public Game() {
         this.root = new GameNode();
         this.result = CONSTANTS.RES_UNDEF;
         this.current = this.root;
-        this.treeWasChanged = false;
-        this.wasEcoClassified = false;
-        this.pgnHeaders = new HashMap<String,String>();
+        this.infoStrings = new HashMap<String,String>();
+        this.infoNumbers = new HashMap<String, Integer>();
+    }
+
+    private boolean containsPositionRec(long positionHash, GameNode node, int maxHalfmove) {
+        if(maxHalfmove <= node.getBoard().halfmoveClock) {
+            return false;
+        }
+        if(node.getBoard().getPositionHash() == positionHash) {
+            return true;
+        } else {
+            for(GameNode var_i : node.getVariations()) {
+                boolean hasPosition = containsPositionRec(positionHash, var_i, maxHalfmove);
+                if(hasPosition) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean containsPosition(long positionHash, int minHalfmove, int maxHalfmove) {
+        GameNode current = this.getRootNode();
+        for(int i=0;i<minHalfmove-1;i++) {
+            if(current.hasChild()) {
+                current = current.getVariation(0);
+            } else {
+                return false;
+            }
+        }
+        return containsPositionRec(positionHash, current, maxHalfmove);
     }
 
     private GameNode findNodeByIdRec(int id, GameNode node) {
@@ -45,20 +91,26 @@ public class Game {
         }
     }
 
-    public boolean isTreeChanged() {
-        return this.treeWasChanged;
+    private ArrayList<Integer> getAllIds(GameNode node) {
+
+        ArrayList<Integer> ids = new ArrayList<>();
+        ids.add(node.getId());
+        for(GameNode nodeI : node.getVariations()) {
+            ids.addAll(getAllIds(nodeI));
+        }
+        return ids;
     }
 
-    public void setTreeWasChanged(boolean status) {
-        this.treeWasChanged = status;
+    public ArrayList<Integer> getAllIds() {
+        return getAllIds(getRootNode());
     }
 
     public void setHeader(String tag, String value) {
-        this.pgnHeaders.put(tag, value);
+        this.infoStrings.put(tag, value);
     }
 
     public String getHeader(String tag) {
-        String value = this.pgnHeaders.get(tag);
+        String value = this.infoStrings.get(tag);
         if(value == null) {
             return "";
         } else {
@@ -67,13 +119,21 @@ public class Game {
     }
 
     public void resetHeaders() {
-        this.pgnHeaders = new HashMap<String, String>();
+        this.infoStrings = new HashMap<String, String>();
     }
 
     public ArrayList<String> getTags() {
         ArrayList<String> tags = new ArrayList<String>();
-        tags.addAll(this.pgnHeaders.keySet());
+        tags.addAll(this.infoStrings.keySet());
         return tags;
+    }
+
+    public HashMap<String,String> getInfoStrings() {
+        return infoStrings;
+    }
+
+    public void setInfoStrings(HashMap<String,String> infoStrings) {
+        this.infoStrings = infoStrings;
     }
 
     public GameNode getRootNode() {
@@ -114,7 +174,7 @@ public class Game {
             GameNode current = this.getCurrentNode();
             Board bCurrent = current.getBoard();
             Board bChild = bCurrent.makeCopy();
-            bChild.apply(m);;
+            bChild.apply(m);
             GameNode newCurrent = new GameNode();
             newCurrent.setBoard(bChild);
             newCurrent.setMove(m);
@@ -232,6 +292,16 @@ public class Game {
         }
     }
 
+    public void removeAllAnnotationsRec(GameNode node) {
+        node.getMoveAnnotations().clear();
+        node.getPositionAnnotations().clear();
+        for(GameNode var_i : node.getVariations()) {
+            this.removeAllAnnotationsRec(var_i);
+        }
+    }
+
+    public void removeAllAnnotations() { this.removeAllAnnotationsRec(this.getRootNode()); }
+
     public void resetWithNewRootBoard(Board newRootBoard) {
         GameNode oldRoot = this.getRootNode();
         this.delBelow(oldRoot);
@@ -258,13 +328,13 @@ public class Game {
     }
 
     public void clearHeaders() {
-        this.pgnHeaders.clear();
-        this.pgnHeaders.put("Event", "");
-        this.pgnHeaders.put("Date", "");
-        this.pgnHeaders.put("Round", "");
-        this.pgnHeaders.put("White", "");
-        this.pgnHeaders.put("Black", "");
-        this.pgnHeaders.put("Result", "*");
+        this.infoStrings.clear();
+        this.infoStrings.put("Event", "");
+        this.infoStrings.put("Date", "");
+        this.infoStrings.put("Round", "");
+        this.infoStrings.put("White", "");
+        this.infoStrings.put("Black", "");
+        this.infoStrings.put("Result", "*");
     }
 
     public int countHalfmoves() {
@@ -275,6 +345,24 @@ public class Game {
             halfmoves += 1;
         }
         return halfmoves;
+    }
+
+    public boolean isThreefoldRepetition() {
+
+        int counter = 1;
+        long zobrist = current.getBoard().getZobrist();
+        GameNode temp = this.current;
+        while(temp.getParent() != null) {
+            temp = temp.getParent();
+            long tempZobrist = temp.getBoard().getZobrist();
+            if(tempZobrist == zobrist) {
+                counter++;
+            }
+            if(counter >= 3) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
