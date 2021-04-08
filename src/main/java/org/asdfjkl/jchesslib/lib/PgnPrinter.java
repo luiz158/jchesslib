@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class PgnPrinter {
 
@@ -275,6 +276,60 @@ public class PgnPrinter {
         //this->forceMoveNumber = false;
     }
 
+    private String convertMsToHHMMSS(int ms) {
+
+        String hms = String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(ms),
+                TimeUnit.MILLISECONDS.toMinutes(ms) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(ms)),
+                TimeUnit.MILLISECONDS.toSeconds(ms) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(ms)));
+
+        return hms;
+    }
+
+    private String createMetaString(GameNode node) {
+        String meta = "";
+        // add extra information
+        if (node.getArrows().size() > 0) {
+            meta += "[%cal ";
+            for (int i = 0; i < node.getArrows().size(); i++) {
+                Arrow a = node.getArrows().get(i);
+                meta += a.toPGNColor();
+                meta += a.toString();
+                if (i != node.getArrows().size() - 1) {
+                    meta += ",";
+                }
+            }
+            meta += "] ";
+        }
+        if (node.getColoredFields().size() > 0) {
+            meta += "[%csl ";
+            for (int i = 0; i < node.getColoredFields().size(); i++) {
+                ColoredField c = node.getColoredFields().get(i);
+                meta += c.toPGNColor();
+                meta += c.toString();
+                if (i != node.getColoredFields().size() - 1) {
+                    meta += ",";
+                }
+            }
+            meta += "] ";
+        }
+        if(node.getEvaluations().size() > 0) {
+            Evaluation e = node.getEvaluations().get(0);
+            if(e.cp != null) {
+                meta += "[%eval "+e.cp+"] ";
+            }
+        }
+        if(node.getEmt() > 0) {
+            meta += "[%emt "+convertMsToHHMMSS(node.getEmt()) + "] ";
+        }
+        if(node.getEgt() > 0) {
+            meta += "[%egt "+convertMsToHHMMSS(node.getEgt()) + "] ";
+        }
+        if(node.getClock() > 0) {
+            meta += "[%clk "+convertMsToHHMMSS(node.getClock()) + "] ";
+        }
+        return meta;
+    }
+
     private void printGameContent(GameNode g) {
 
         Board b = g.getBoard();
@@ -293,7 +348,12 @@ public class PgnPrinter {
             }
             // write comments
             if(!mainVariation.getComment().isEmpty()) {
-                this.printComment(mainVariation.getComment());
+                String meta = createMetaString(mainVariation);
+                String comment = mainVariation.getComment();
+                if(!meta.isEmpty()) {
+                    comment = meta + " " + comment;
+                }
+                this.printComment(comment);
             }
         }
 
@@ -312,7 +372,12 @@ public class PgnPrinter {
             }
             // finally print comments
             if(!var_i.getComment().isEmpty()) {
-                this.printComment(var_i.getComment());
+                String meta = createMetaString(var_i);
+                String comment = var_i.getComment();
+                if(!meta.isEmpty()) {
+                    comment = meta + " " + comment;
+                }
+                this.printComment(comment);
             }
 
             // recursive call for all children

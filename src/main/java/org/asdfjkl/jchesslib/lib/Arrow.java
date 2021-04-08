@@ -36,6 +36,19 @@ public class Arrow {
         return coord;
     }
 
+    public String toPGNColor() {
+        if(color.equals("#FF0000")) {
+            return "R";
+        }
+        if(color.equals("#00FF00")) {
+            return "G";
+        }
+        if(color.equals("#FFFF00")) {
+            return "Y";
+        }
+        return "B";
+    }
+
     public void fromPGNString(String s) {
 
         s = s.toUpperCase();
@@ -54,10 +67,10 @@ public class Arrow {
             } else {
                 color = "#000000";
             }
-            int fromColumn = Move.alphaToPos(s.charAt(1));
+            int fromColumn = Move.alphaToPos(s.charAt(1)) - 1;
             int fromRow = ((int) s.charAt(2)) - 49;
 
-            int toColumn = Move.alphaToPos(s.charAt(3));
+            int toColumn = Move.alphaToPos(s.charAt(3)) - 1;
             int toRow = ((int) s.charAt(4)) - 49;
 
             if(fromColumn >= 0 && fromColumn <= 8 && fromRow >= 0 && fromRow <= 8

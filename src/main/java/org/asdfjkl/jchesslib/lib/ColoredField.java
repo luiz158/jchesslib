@@ -30,6 +30,19 @@ public class ColoredField {
         return coord;
     }
 
+    public String toPGNColor() {
+        if(color.equals("#FF0000")) {
+            return "R";
+        }
+        if(color.equals("#00FF00")) {
+            return "G";
+        }
+        if(color.equals("#FFFF00")) {
+            return "Y";
+        }
+        return "B";
+    }
+
     public void fromPGNString(String s) {
 
         s = s.toUpperCase();
@@ -48,7 +61,7 @@ public class ColoredField {
             } else {
                 color = "#000000";
             }
-            int column = Move.alphaToPos(s.charAt(1));
+            int column = Move.alphaToPos(s.charAt(1)) - 1;
             int row = ((int) s.charAt(2)) - 49;
 
             if(column >= 0 && column <= 8 && row >= 0 && row <= 8) {

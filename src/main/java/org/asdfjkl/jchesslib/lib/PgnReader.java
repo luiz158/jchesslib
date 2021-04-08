@@ -740,7 +740,7 @@ public class PgnReader {
                 int secs = Integer.parseInt(timeString[2]);
                 int mins = Integer.parseInt(timeString[1]);
                 int hours = Integer.parseInt(timeString[0]);
-                return secs * 1000 + mins * 60 * 1000 + hours * 24 * 60 * 1000;
+                return secs * 1000 + mins * 60 * 1000 + hours * 60 * 60 * 1000;
             } catch (NumberFormatException e) {
             }
         }
