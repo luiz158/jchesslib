@@ -66,27 +66,52 @@ public class PgnPrinter {
     }
 
     private void printHeaders(Game g) {
-        String tag = "[Event \"" + g.getHeader("Event") + "\"]";
+        String tag = "[Event \"" + g.getStringHeader("event") + "\"]";
         pgn.append(tag).append("\n");
-        tag = "[Site \"" + g.getHeader("Site") + "\"]";
+        tag = "[Site \"" + g.getStringHeader("site") + "\"]";
         pgn.append(tag).append("\n");
-        tag = "[Date \"" + g.getHeader("Date") + "\"]";
+        String dateString = g.getStringHeader("date");
+        switch(dateString.length()) {
+            case 4:
+                dateString += ".??.??";
+                break;
+            case 7:
+                dateString += ".??";
+        }
+        if(dateString.length() > 10) {
+            dateString = dateString.substring(0, 10);
+        }
+        tag = "[Date \"" + dateString + "\"]";
         pgn.append(tag).append("\n");
-        tag = "[Round \"" + g.getHeader("Round") + "\"]";
+        tag = "[Round \"" + g.getNumberHeader("round") + "\"]";
         pgn.append(tag).append("\n");
-        tag = "[White \"" + g.getHeader("White") + "\"]";
+        tag = "[White \"" + g.getStringHeader("white") + "\"]";
         pgn.append(tag).append("\n");
-        tag = "[Black \"" + g.getHeader("Black") + "\"]";
+        tag = "[Black \"" + g.getStringHeader("black") + "\"]";
         pgn.append(tag).append("\n");
-        tag = "[Result \"" + g.getHeader("Result") + "\"]";
+        tag = "[Result \"" + g.getStringHeader("result") + "\"]";
         pgn.append(tag).append("\n");
-        ArrayList<String> allTags = g.getTags();
-        for(String tag_i : allTags) {
-            if(!tag_i.equals("Event") && !tag_i.equals("Site") && !tag_i.equals("Date") && !tag_i.equals("Round")
-                    && !tag_i.equals("White") && !tag_i.equals("Black") && !tag_i.equals("Result" ))
+        ArrayList<String> allStringTags = g.getStringTags();
+        for(String tag_i : allStringTags) {
+            if(!tag_i.equals("event") && !tag_i.equals("site") && !tag_i.equals("date")
+                    && !tag_i.equals("white") && !tag_i.equals("black") && !tag_i.equals("result" ))
             {
-                String value_i = g.getHeader(tag_i);
-                String tag_val = "[" + tag_i + " \"" + value_i + "\"]";
+                String value_i = g.getStringHeader(tag_i);
+                String tag_i_cap = tag_i.substring(0, 1).toUpperCase() + tag_i.substring(1);;
+                if(tag_i.equals("eco")) {
+                    tag_i_cap = "ECO";
+                }
+                String tag_val = "[" + tag_i_cap + " \"" + value_i + "\"]";
+                pgn.append(tag_val).append("\n");
+            }
+        }
+        ArrayList<String> allNumberTags = g.getNumberTags();
+        for(String tag_i : allNumberTags) {
+            if(!tag_i.equals("round" ))
+            {
+                int value_i = g.getNumberHeader(tag_i);
+                String tag_i_cap = tag_i.substring(0, 1).toUpperCase() + tag_i.substring(1);;
+                String tag_val = "[" + tag_i_cap + " \"" + value_i + "\"]";
                 pgn.append(tag_val).append("\n");
             }
         }

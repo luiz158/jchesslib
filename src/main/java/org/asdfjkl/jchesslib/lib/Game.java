@@ -18,10 +18,16 @@
 
 package org.asdfjkl.jchesslib.lib;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializable;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class Game {
+public class Game extends JsonSerializable.Base {
 
     private GameNode root = null;
     private GameNode current = null;
@@ -105,11 +111,11 @@ public class Game {
         return getAllIds(getRootNode());
     }
 
-    public void setHeader(String tag, String value) {
+    public void setStringHeader(String tag, String value) {
         this.infoStrings.put(tag, value);
     }
 
-    public String getHeader(String tag) {
+    public String getStringHeader(String tag) {
         String value = this.infoStrings.get(tag);
         if(value == null) {
             return "";
@@ -118,13 +124,34 @@ public class Game {
         }
     }
 
-    public void resetHeaders() {
-        this.infoStrings = new HashMap<String, String>();
+    public void setNumberHeader(String tag, int value) {
+        this.infoNumbers.put(tag, value);
     }
 
-    public ArrayList<String> getTags() {
+    public int getNumberHeader(String tag) {
+        Integer value = this.infoNumbers.get(tag);
+        if(value == null) {
+            return -1;
+        } else {
+            return value;
+        }
+    }
+
+    public void resetHeaders() {
+
+        this.infoStrings = new HashMap<>();
+        this.infoNumbers = new HashMap<>();
+    }
+
+    public ArrayList<String> getStringTags() {
         ArrayList<String> tags = new ArrayList<String>();
         tags.addAll(this.infoStrings.keySet());
+        return tags;
+    }
+
+    public ArrayList<String> getNumberTags() {
+        ArrayList<String> tags = new ArrayList<String>();
+        tags.addAll(this.infoNumbers.keySet());
         return tags;
     }
 
@@ -365,5 +392,29 @@ public class Game {
         return false;
     }
 
+    @Override
+    public void serialize(JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        gen.writeStartObject();
+        gen.writeStringField("type", "Game");
+        gen.writeFieldName("info");
+        gen.writeStartObject();
+        for(String key : infoStrings.keySet()) {
+            gen.writeStringField(key, infoStrings.get(key));
+        }
+        for(String key : infoNumbers.keySet()) {
+            gen.writeNumberField(key, infoNumbers.get(key));
+        }
+        gen.writeEndObject();
+        gen.writeFieldName("moves");
+        gen.writeStartArray();
+        gen.writeObject(root);
+        gen.writeEndArray();
+        gen.writeEndObject();
+    }
+
+    @Override
+    public void serializeWithType(JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
+        throw new UnsupportedOperationException("Not supported.");
+    }
 
 }

@@ -5,7 +5,7 @@ public class Evaluation {
     public Integer cp = null;
     public Integer mate = null;
 
-    public String engine = null;
+    public String engine = "";
     public Integer depth = null;
 
 }

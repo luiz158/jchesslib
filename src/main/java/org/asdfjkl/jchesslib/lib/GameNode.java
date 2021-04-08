@@ -18,12 +18,18 @@
 
 package org.asdfjkl.jchesslib.lib;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializable;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import jdk.jshell.Diag;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class GameNode {
+public class GameNode extends JsonSerializable.Base {
 
     static int id;
     private final int nodeId;
@@ -35,7 +41,7 @@ public class GameNode {
     private final ArrayList<GameNode> variations;
 
     private String comment;
-    private int clock;
+    private int clock = -1;
     private ArrayList<ColoredField> coloredFields;
     private ArrayList<Arrow> arrows;
     private ArrayList<Attachment> attachments;
@@ -43,8 +49,11 @@ public class GameNode {
     private ArrayList<Evaluation> evaluations;
     private ArrayList<String> moveAnnotations;
     private ArrayList<String> positionAnnotations;
-    private int egt;
-    private int emt;
+    private int egt = -1;
+    private int emt = -1;
+
+    private String circlesColor = "";
+    private String arrowsColor = "";
 
 
     protected static int initId() {
@@ -183,6 +192,18 @@ public class GameNode {
         return positionAnnotations;
     }
 
+    public void setClock(int clock) { this.clock = clock; }
+
+    public int getClock() { return clock; }
+
+    public void setEgt(int egt) { this.egt = egt; }
+
+    public int getEgt() { return egt; }
+
+    public void setEmt(int emt) { this.emt = emt; }
+
+    public int getEmt() { return emt; }
+
     public int getId() {
         return this.nodeId;
     }
@@ -272,5 +293,167 @@ public class GameNode {
             return this.parent.getDepth() + 1;
         }
     }
+
+    @Override
+    public void serialize(JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        if(move != null) {
+            gen.writeString(move.getUci());
+        }
+        if(!comment.isEmpty()) {
+            gen.writeStartObject();
+            gen.writeStringField("comment", comment);
+            gen.writeEndObject();
+        }
+        if(clock >= 0) {
+            gen.writeStartObject();
+            gen.writeNumberField("clock", clock);
+            gen.writeEndObject();
+        }
+        if(coloredFields != null && coloredFields.size() > 0) {
+            for (ColoredField c : coloredFields) {
+                gen.writeStartObject();
+                gen.writeFieldName("circle");
+                gen.writeStartObject();
+                String coord = c.toString();
+                gen.writeStringField("field", coord);
+                gen.writeStringField("color", c.color);
+                gen.writeEndObject();
+                gen.writeEndObject();
+            }
+        }
+        if(arrows != null && arrows.size() > 0) {
+            for (Arrow a : arrows) {
+                gen.writeStartObject();
+                gen.writeFieldName("arrow");
+                gen.writeStartObject();
+                String coord = a.toString();
+                gen.writeStringField("from", coord.substring(0,2));
+                gen.writeStringField("to", coord.substring(2,4));
+                gen.writeStringField("color", a.color);
+                gen.writeEndObject();
+                gen.writeEndObject();
+            }
+        }
+        if(attachments != null) {
+            for (Attachment a : attachments) {
+                gen.writeStartObject();
+                gen.writeStringField("url", a.url);
+                gen.writeStringField("mediaType", a.mediaType);
+                gen.writeEndObject();
+            }
+        }
+        if(diagrams != null) {
+            for (Diagram d : diagrams) {
+                gen.writeStartObject();
+                gen.writeFieldName("diagram");
+                gen.writeStartObject();
+                if(!d.label.isEmpty()) {
+                    gen.writeStringField("label", d.label);
+                }
+                if(d.coloredFields.size() > 0) {
+                    for (ColoredField c : coloredFields) {
+                        gen.writeStartObject();
+                        gen.writeFieldName("circle");
+                        gen.writeStartObject();
+                        String coord = c.toString();
+                        gen.writeStringField("field", coord);
+                        gen.writeStringField("color", c.color);
+                        gen.writeEndObject();
+                        gen.writeEndObject();
+                    }
+                }
+                if(d.arrows.size() > 0) {
+                    for (Arrow a : arrows) {
+                        gen.writeStartObject();
+                        gen.writeFieldName("arrow");
+                        gen.writeStartObject();
+                        String coord = a.toString();
+                        gen.writeStringField("from", coord.substring(0,2));
+                        gen.writeStringField("to", coord.substring(2,4));
+                        gen.writeStringField("color", a.color);
+                        gen.writeEndObject();
+                        gen.writeEndObject();
+                    }
+                }
+                gen.writeEndObject();
+                gen.writeEndObject();
+            }
+        }
+
+        if(evaluations != null && evaluations.size() > 0) {
+            for(Evaluation e : evaluations) {
+                gen.writeStartObject();
+                if(e.cp != null) {
+                    gen.writeNumberField("cp", e.cp);
+                }
+                if(e.mate != null) {
+                    gen.writeNumberField("mate", e.mate);
+                }
+                if(e.depth != null) {
+                    gen.writeNumberField("depth", e.depth);
+                }
+                if(!e.engine.isEmpty()) {
+                    gen.writeStringField("engine", e.engine);
+                }
+                gen.writeEndObject();
+            }
+        }
+
+        if(move != null && moveAnnotations != null && moveAnnotations.size() > 0) {
+            gen.writeStartObject();
+            gen.writeFieldName("moveAnnotations");
+            gen.writeStartArray();
+            for(String ma : moveAnnotations) {
+                gen.writeString(ma);
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
+
+        if(positionAnnotations != null && positionAnnotations.size() > 0) {
+            gen.writeStartObject();
+            gen.writeFieldName("positionAnnotations");
+            gen.writeStartArray();
+            for(String pa : positionAnnotations) {
+                gen.writeString(pa);
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
+
+        if(egt > 0) {
+            gen.writeStartObject();
+            gen.writeNumberField("egt", egt);
+            gen.writeEndObject();
+        }
+
+        if(emt > 0) {
+            gen.writeStartObject();
+            gen.writeNumberField("emt", emt);
+            gen.writeEndObject();
+        }
+
+        if(variations.size() > 0) {
+            gen.writeObject(variations.get(0));
+        }
+
+        if(variations.size() > 1) {
+            gen.writeStartObject();
+            gen.writeFieldName("moves");
+            gen.writeStartArray();
+            for(int i=0;i<variations.size();i++) {
+                gen.writeObject(variations.get(i));
+            }
+            gen.writeEndArray();
+            gen.writeEndObject();
+        }
+
+    }
+
+    @Override
+    public void serializeWithType(JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
 
 }

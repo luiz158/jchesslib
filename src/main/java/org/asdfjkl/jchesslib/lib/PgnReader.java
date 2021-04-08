@@ -20,6 +20,8 @@ package org.asdfjkl.jchesslib.lib;
 
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
+
+import java.awt.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -93,49 +95,6 @@ public class PgnReader {
         }
         return isLatin1;
     }
-
-
-    /*
-    bool PgnReader::isUtf8(const QString &filename) {
-        // very simple way to detecting majority of encodings:
-        // first try ISO 8859-1
-        // open the file and read a max of 100 first bytes
-        // if conversion to unicode works, try some more bytes (at most 40 * 100)
-        // if conversion errors occur, we simply assume UTF-8
-        //const char* iso = "ISO 8859-1";
-        //const char* utf8 = "UTF-8";
-        QFile file(filename);
-        if(!file.open(QFile::ReadOnly)) {
-            return true;
-        }
-        QDataStream in(&file);
-        // init some char array to read bytes
-        char first100arr[100];
-        for(int i=0;i<100;i++) {
-            first100arr[i] = 0x00;
-        }
-        char *first100 = first100arr;
-        // prep conversion tools
-        QTextCodec::ConverterState state;
-        QTextCodec *codec = QTextCodec::codecForName("UTF-8");
-
-        int iterations = 40;
-        int i=0;
-        int l = 100;
-        bool isUtf8 = true;
-        while(i<iterations && l>=100) {
-            l = in.readRawData(first100, 100);
-        const QString text = codec->toUnicode(first100, 100, &state);
-            if (state.invalidChars > 0) {
-                isUtf8 = false;
-                break;
-            }
-            i++;
-        }
-        return isUtf8;
-    }
-    */
-
 
     public ArrayList<Long> scanPgn(String filename) {
 
@@ -751,6 +710,98 @@ public class PgnReader {
         }
     }
 
+
+    // given meta comment pattern, returns ArrayList of all found strings,
+    // i.e. for " [%clk 1:55:21] bar" it will return
+    // "1:55:21"
+    private String[] findMetaStrings(String line, String startString) {
+
+        String[] ret = new String[2];
+        int index = line.indexOf(startString);
+        if(index != -1) {
+            int endIndex = line.indexOf("]", index + startString.length());
+            if(endIndex != -1) {
+                ret[0] = line.substring(index + startString.length(), endIndex).trim();
+                ret[1] = line.substring(0, index) + line.substring(endIndex+1, line.length());
+                return ret;
+            }
+        }
+        ret[0] = "";
+        ret[1] = line;
+        return ret;
+    }
+
+    // parse string "1:55:21" and return mililseconds or -1
+
+    private int parseTimeStringToMs(String s) {
+        String[] timeString = s.split(":");
+        if(timeString.length == 3) {
+            try {
+                int secs = Integer.parseInt(timeString[2]);
+                int mins = Integer.parseInt(timeString[1]);
+                int hours = Integer.parseInt(timeString[0]);
+                return secs * 1000 + mins * 60 * 1000 + hours * 24 * 60 * 1000;
+            } catch (NumberFormatException e) {
+            }
+        }
+        return -1;
+    }
+
+    // scan comments for
+    // [%clk 1:55:21]}
+    // [%egt 1:25:42]}
+    // [%emt 0:05:42]}
+    // [%eval ...]
+    // [%csl ...]
+    // [%cal ...]
+    private String extractExtraInfo(GameNode node, String comment) {
+        String[] clockInfo = findMetaStrings(comment, "[%clk");
+        // only take the first clock
+        if(!clockInfo[0].isEmpty()) {
+            int ms = parseTimeStringToMs(clockInfo[0]);
+            if(ms >= 0) {
+                node.setClock(ms);
+            }
+        }
+        String[] egtInfo = findMetaStrings(clockInfo[1], "[%egt");
+        if(!egtInfo[0].isEmpty()) {
+            int ms = parseTimeStringToMs(egtInfo[0]);
+            if(ms >= 0) {
+                node.setEgt(ms);
+            }
+        }
+        String[] emtInfo = findMetaStrings(egtInfo[1], "[%emt");
+        if(!emtInfo[0].isEmpty()) {
+            int ms = parseTimeStringToMs(emtInfo[0]);
+            if(ms >= 0) {
+                node.setEmt(ms);
+            }
+        }
+        String[] arrowInfo = findMetaStrings(emtInfo[1], "[%cal");
+        String[] arrowInfos = arrowInfo[0].split(",");
+        for(int i=0;i<arrowInfos.length;i++) {
+            Arrow a = new Arrow();
+            try {
+                a.fromPGNString(arrowInfos[i]);
+                node.addOrRemoveArrow(a);
+            } catch (IllegalArgumentException e) {
+            }
+        }
+        String[] coloredFieldInfo = findMetaStrings(arrowInfo[1], "[%csl");
+        String[] coloredFieldInfos = coloredFieldInfo[0].split(",");
+        for(int i=0;i<coloredFieldInfos.length;i++) {
+            ColoredField c = new ColoredField();
+            try {
+                c.fromPGNString(coloredFieldInfos[i]);
+                node.addOrRemoveColoredField(c);
+            } catch (IllegalArgumentException e) {
+            }
+        }
+
+        return coloredFieldInfo[1].trim();
+    }
+
+
     private int getNetxtToken() {
 
         int lineSize = currentLine.length();
@@ -875,8 +926,61 @@ public class PgnReader {
                             String value = currentLine.substring(firstQuote + 1, secondQuote);
                             if (tag.equals("FEN")) {
                                 startingFen = value;
+                            } else if (tag.equals("WhiteRating") || tag.equals("BlackRating") ||
+                                    tag.equals("WhiteRatingDiff") || tag.equals("BlackRatingDiff") ||
+                                    tag.equals("Round") || tag.equals("BoardNr")) {
+                                try {
+                                    int val = Integer.parseInt(value);
+                                    g.setNumberHeader(tag.toLowerCase(), val);
+                                } catch (NumberFormatException e) {
+                                    g.setStringHeader(tag.toLowerCase(), new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
+                                }
+                            } else if(tag.equals("Date")) {
+                                System.out.println("date value: "+value);
+                                String[] values = value.split("\\.");
+                                int year = -1;
+                                int month = -1;
+                                int day = -1;
+                                if(values.length > 0) {
+                                    try {
+                                        year = Integer.parseInt(values[0]);
+                                    } catch (NumberFormatException e) { }
+                                }
+                                if(values.length > 1) {
+                                    try {
+                                        month = Integer.parseInt(values[1]);
+                                    } catch (NumberFormatException e) { }
+                                }
+                                if(values.length > 2) {
+                                    try {
+                                        day = Integer.parseInt(values[2]);
+                                    } catch (NumberFormatException e) { }
+                                }
+                                String timestamp = "";
+                                if(year > 0) {
+                                    timestamp += year;
+                                }
+                                if(month >= 1 && month <= 12) {
+                                    timestamp += "-";
+                                    if(month < 10) {
+                                        timestamp += "0" + month;
+                                    } else {
+                                        timestamp += month;
+                                    }
+                                }
+                                if(day >= 1 && day <= 31) {
+                                    timestamp += "-";
+                                    if(day < 10) {
+                                        timestamp += "0" + day;
+                                    } else {
+                                        timestamp += "-" + day;
+                                    }
+                                }
+                                if(!timestamp.isEmpty()) {
+                                    g.setStringHeader(tag.toLowerCase(), timestamp);
+                                }
                             } else {
-                                g.setHeader(tag, new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
+                                g.setStringHeader(tag.toLowerCase(), new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
                             }
                         }
                     }
@@ -1026,7 +1130,10 @@ public class PgnReader {
                         int end = rest_of_line.indexOf("}");
                         if (end >= 0) {
                             String comment_line = rest_of_line.substring(0, end);
-                            currentNode.setComment(new String(comment_line.getBytes(StandardCharsets.ISO_8859_1), encoding));
+                            comment_line = extractExtraInfo(currentNode, new String(comment_line.getBytes(StandardCharsets.ISO_8859_1), encoding));
+                            if(!comment_line.isEmpty()) {
+                                currentNode.setComment(comment_line);
+                            }
                             currentIdx = currentIdx + end + 1;
                         } else {
                             // get comment over multiple lines
@@ -1060,7 +1167,11 @@ public class PgnReader {
                                 comment_lines.append("\n");
                                 currentIdx = end_index + 1;
                             }
-                            currentNode.setComment(new String(comment_lines.toString().getBytes(StandardCharsets.ISO_8859_1), encoding));
+                            String finalLine = new String(comment_lines.toString().getBytes(StandardCharsets.ISO_8859_1), encoding);
+                            finalLine = extractExtraInfo(currentNode, finalLine);
+                            if(!finalLine.isEmpty()) {
+                                currentNode.setComment(finalLine);
+                            }
                         }
                     }
                 }
@@ -1116,7 +1227,7 @@ public class PgnReader {
                                 startingFen = value;
                             } else {
                                 try {
-                                    g.setHeader(tag, new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
+                                    g.setStringHeader(tag, new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
                                 } catch(UnsupportedEncodingException e) {
                                     e.printStackTrace();
                                 }

@@ -1,5 +1,7 @@
 package org.asdfjkl.jchesslib;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.cli.*;
 import org.asdfjkl.jchesslib.lib.*;
 
@@ -30,7 +32,16 @@ public class Main {
             OptimizedRandomAccessFile raf = new OptimizedRandomAccessFile(inputFilePath, "r");
             Game g = pgnReader.readGame(raf);
             String pgn = pgnPrinter.printGame(g);
-                System.out.println(pgn);
+            System.out.println(pgn);
+
+            System.out.println("-----------------------------");
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+            //objectMapper.writerWithDefaultPrettyPrinter();
+            String json = objectMapper.writeValueAsString(g);
+            System.out.println(json);
+
         } catch (ParseException e) {
             System.out.println(e.getMessage());
             formatter.printHelp("jchesslib", options);

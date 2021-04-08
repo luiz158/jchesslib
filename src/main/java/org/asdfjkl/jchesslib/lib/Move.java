@@ -97,7 +97,7 @@ public class Move {
         return to;
     }
 
-    private int alphaToPos(char alpha) {
+    public static int alphaToPos(char alpha) {
         if (alpha == 'A') {
             return 1;
         } else if (alpha == 'B') {

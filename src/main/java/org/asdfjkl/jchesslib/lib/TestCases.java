@@ -19,7 +19,6 @@
 package org.asdfjkl.jchesslib.lib;
 
 import java.io.*;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -285,14 +284,14 @@ public class TestCases {
 
         System.out.println("TEST: simple PGN printing");
         Game g = new Game();
-        g.setHeader("Event", "Knaurs Schachbuch");
-        g.setHeader("Site", "Paris");
-        g.setHeader("Date", "1859.??.??");
-        g.setHeader("Round", "1");
-        g.setHeader("White", "Morphy");
-        g.setHeader("Black", "NN");
-        g.setHeader("Result", "1-0");
-        g.setHeader("ECO", "C56");
+        g.setStringHeader("Event", "Knaurs Schachbuch");
+        g.setStringHeader("Site", "Paris");
+        g.setStringHeader("Date", "1859.??.??");
+        g.setStringHeader("Round", "1");
+        g.setStringHeader("White", "Morphy");
+        g.setStringHeader("Black", "NN");
+        g.setStringHeader("Result", "1-0");
+        g.setStringHeader("ECO", "C56");
 
         Board rootBoard = new Board(true);
         g.getRootNode().setBoard(rootBoard);
