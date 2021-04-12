@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class GameNode extends JsonSerializable.Base {
+public class GameNode {
 
     static int id;
     private final int nodeId;
@@ -294,6 +294,7 @@ public class GameNode extends JsonSerializable.Base {
         }
     }
 
+    /*
     @Override
     public void serialize(JsonGenerator gen, SerializerProvider serializers) throws IOException {
         if(move != null) {
@@ -454,6 +455,6 @@ public class GameNode extends JsonSerializable.Base {
     public void serializeWithType(JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
         throw new UnsupportedOperationException("Not supported.");
     }
-
+*/
 
 }

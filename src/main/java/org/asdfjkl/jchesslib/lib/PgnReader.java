@@ -936,7 +936,6 @@ public class PgnReader {
                                     g.setStringHeader(tag.toLowerCase(), new String(value.getBytes(StandardCharsets.ISO_8859_1), encoding));
                                 }
                             } else if(tag.equals("Date")) {
-                                System.out.println("date value: "+value);
                                 String[] values = value.split("\\.");
                                 int year = -1;
                                 int month = -1;

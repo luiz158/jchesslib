@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class Game extends JsonSerializable.Base {
+public class Game {
 
     private GameNode root = null;
     private GameNode current = null;
@@ -136,6 +136,8 @@ public class Game extends JsonSerializable.Base {
             return value;
         }
     }
+
+    public HashMap<String, Integer> getInfoNumbers() { return infoNumbers; }
 
     public void resetHeaders() {
 
@@ -390,31 +392,6 @@ public class Game extends JsonSerializable.Base {
             }
         }
         return false;
-    }
-
-    @Override
-    public void serialize(JsonGenerator gen, SerializerProvider serializers) throws IOException {
-        gen.writeStartObject();
-        gen.writeStringField("type", "Game");
-        gen.writeFieldName("info");
-        gen.writeStartObject();
-        for(String key : infoStrings.keySet()) {
-            gen.writeStringField(key, infoStrings.get(key));
-        }
-        for(String key : infoNumbers.keySet()) {
-            gen.writeNumberField(key, infoNumbers.get(key));
-        }
-        gen.writeEndObject();
-        gen.writeFieldName("moves");
-        gen.writeStartArray();
-        gen.writeObject(root);
-        gen.writeEndArray();
-        gen.writeEndObject();
-    }
-
-    @Override
-    public void serializeWithType(JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
-        throw new UnsupportedOperationException("Not supported.");
     }
 
 }
